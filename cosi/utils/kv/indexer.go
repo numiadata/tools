@@ -82,9 +82,9 @@ func newTxIndex(path string, start, end int64) (*txIndex, error) {
 		return nil, err
 	}
 
-	sKey := heightKey(txKey, heightKey, start)
-	endKey := heightKey(txKey, heightKey, end)
-	store.Iterator(sKey, endKey)
+	// sKey := heightKey(txKey, heightKey, start)
+	// endKey := heightKey(txKey, heightKey, end)
+	// store.Iterator(sKey, endKey)
 
 	return &txIndex{
 		store: store,
@@ -92,10 +92,30 @@ func newTxIndex(path string, start, end int64) (*txIndex, error) {
 }
 
 // getHashes returns the tx hashes for the given height.
-func (txi *txIndex) getHashes(height int64) ([][]byte, error) {
+func (txi *txIndex) getHashes(ctx context.Context, height int64) ([][]byte, error) {
 	key := heightKey(txKey, height, height)
-	fmt.Println(txKey, height, height)
-	fmt.Println(heightKey(txKey, 5, 5))
+
+	it, err := dbm.IteratePrefix(txi.store, key)
+	if err != nil {
+		return nil, err
+	}
+
+	defer it.Close()
+
+	tmpHashes := make(map[string][]byte)
+
+	for ; it.Valid(); it.Next() {
+		tmpHashes[string(it.Value())] = it.Value()
+
+		// Potentially exit early.
+		select {
+		case <-ctx.Done():
+			break
+		default:
+		}
+	}
+
+	fmt.Println(tmpHashes, "Hashes\n\n\n")
 
 	bz, err := txi.store.Get(key)
 	if err != nil {
