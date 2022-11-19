@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/numiadata/cosi/utils/kv"
-	"github.com/numiadata/cosi/utils/pubsub"
+	"github.com/numiadata/tools/cosi/utils/kv"
+	"github.com/numiadata/tools/cosi/utils/pubsub"
 )
 
 // this command is used for reinstalling the events using a local db

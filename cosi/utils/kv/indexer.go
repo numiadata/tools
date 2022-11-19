@@ -10,7 +10,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/numiadata/cosi/utils/pubsub"
+	"github.com/numiadata/tools/cosi/utils/pubsub"
 )
 
 // Data in the tx_index.db is stored as

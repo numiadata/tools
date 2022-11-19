@@ -1,4 +1,4 @@
-module github.com/numiadata/cosi
+module github.com/numiadata/tools/cosi
 
 go 1.19
 
