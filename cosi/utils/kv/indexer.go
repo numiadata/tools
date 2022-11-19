@@ -94,6 +94,8 @@ func newTxIndex(path string, start, end int64) (*txIndex, error) {
 // getHashes returns the tx hashes for the given height.
 func (txi *txIndex) getHashes(height int64) ([][]byte, error) {
 	key := heightKey(txKey, height, height)
+	fmt.Println(txKey, height, height)
+	fmt.Println(heightKey(txKey, 5, 5))
 
 	bz, err := txi.store.Get(key)
 	if err != nil {
