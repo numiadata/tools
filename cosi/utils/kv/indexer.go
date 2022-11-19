@@ -38,7 +38,7 @@ func IndexTxs(ctx context.Context, consumer *pubsub.EventSink, path string, star
 	//TODO see if this can be concurrent
 	for i := start; i < end; i++ {
 		// get tx hash
-		hashes, err := db.getHashes(i)
+		hashes, err := db.getHashes(ctx, i)
 		if err != nil {
 			return err
 		}
