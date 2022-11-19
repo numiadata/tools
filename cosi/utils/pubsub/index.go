@@ -189,6 +189,7 @@ func (es *EventSink) IndexBlock(h types.EventDataNewBlockHeader) error {
 }
 
 func (es *EventSink) IndexTxs(txrs []*abci.TxResult) error {
+	fmt.Println("indexing txs", len(txrs))
 
 	results := make([]*pubsub.PublishResult, len(txrs))
 	for i, txr := range txrs {

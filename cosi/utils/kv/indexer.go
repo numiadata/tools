@@ -27,7 +27,7 @@ const (
 	txKey           = "tx.height"
 )
 
-var i int64
+var j int64
 
 func IndexTxs(ctx context.Context, consumer *pubsub.EventSink, path string, start, end int64) error {
 
@@ -46,6 +46,14 @@ func IndexTxs(ctx context.Context, consumer *pubsub.EventSink, path string, star
 		if len(hashes) == 0 {
 			fmt.Println("no txs for height", i)
 			continue
+		}
+
+		// cheeky way to only print lints every 1000 blocks
+		if j == 500 {
+			fmt.Println(i, "500")
+			j = 0
+		} else {
+			j++
 		}
 
 		if len(hashes) > 0 {
@@ -115,16 +123,13 @@ func (txi *txIndex) getHashes(ctx context.Context, height int64) (map[string][]b
 		}
 	}
 
+	// bz, err := txi.store.Get(key)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
 	if len(tmpHashes) == 0 {
 		return nil, nil
-	}
-
-	// cheeky way to only print lints every 1000 blocks
-	if i == 500 {
-		fmt.Println(height)
-		i = 0
-	} else {
-		i++
 	}
 
 	return tmpHashes, nil
