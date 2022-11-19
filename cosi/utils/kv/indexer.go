@@ -92,7 +92,7 @@ func newTxIndex(path string, start, end int64) (*txIndex, error) {
 }
 
 // getHashes returns the tx hashes for the given height.
-func (txi *txIndex) getHashes(ctx context.Context, height int64) ([][]byte, error) {
+func (txi *txIndex) getHashes(ctx context.Context, height int64) (map[string][]byte, error) {
 	key := heightKey(txKey, height, height)
 
 	it, err := dbm.IteratePrefix(txi.store, key)
@@ -115,16 +115,7 @@ func (txi *txIndex) getHashes(ctx context.Context, height int64) ([][]byte, erro
 		}
 	}
 
-	if len(tmpHashes) > 0 {
-		fmt.Println(tmpHashes, "Hashes\n\n\n")
-	}
-
-	bz, err := txi.store.Get(key)
-	if err != nil {
-		return nil, err
-	}
-
-	if bz == nil {
+	if len(tmpHashes) == 0 {
 		return nil, nil
 	}
 
@@ -136,7 +127,7 @@ func (txi *txIndex) getHashes(ctx context.Context, height int64) ([][]byte, erro
 		i++
 	}
 
-	return nil, nil
+	return tmpHashes, nil
 }
 
 // getTxEvents returns the events for the given tx hash and sends it via pubsub to a listener
