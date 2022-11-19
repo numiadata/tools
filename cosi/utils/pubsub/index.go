@@ -16,7 +16,9 @@ import (
 )
 
 const (
-	credsEnvVar     = "GOOGLE_APPLICATION_CREDENTIALS"
+	credsEnvVar = "GOOGLE_APPLICATION_CREDENTIALS"
+
+	//todo: migrate this to flags
 	projectIDEnvVar = "PROJECT_ID"
 	topicEnvVar     = "TOPIC"
 	chainIDEnvVar   = "CHAIN_ID"

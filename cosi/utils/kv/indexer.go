@@ -22,23 +22,21 @@ import (
 // key: height
 // value: txhash
 
-// Loop over all heights, get the tx hash then get the tx data and send to pubsub
-// good for tx indexing, but for block events we would still need to got through the state.db (RPC)
-
 const (
 	tagKeySeparator = "/"
 	txKey           = "tx"
-	heightKey       = "height"
+	hKey            = "height"
 )
 
 var i int64
 
 func IndexTxs(ctx context.Context, consumer *pubsub.EventSink, path string, start, end int64) error {
 
-	db, err := newTxIndex(path)
+	db, err := newTxIndex(path, start, end)
 	if err != nil {
 		return err
 	}
+	//TODO see if this can be concurrent
 	for i := start; i < end; i++ {
 		// get tx hash
 		hashes, err := db.getHashes(i)
@@ -46,18 +44,25 @@ func IndexTxs(ctx context.Context, consumer *pubsub.EventSink, path string, star
 			return err
 		}
 
-		results := make([]*abci.TxResult, 0, len(hashes))
-		// get tx data
-		for _, hash := range hashes {
-			events, err := db.getTxEvents(hash) //todo pass in the pubsub streamed
-			if err != nil {
-				return err
-			}
-			results = append(results, events)
+		if len(hashes) == 0 {
+			fmt.Println("no txs for height", i)
+			continue
 		}
 
-		// index this blocks txs
-		consumer.IndexTxs(results)
+		if len(hashes) > 0 {
+			results := make([]*abci.TxResult, 0, len(hashes))
+			// get tx data
+			for _, hash := range hashes {
+				events, err := db.getTxEvents(hash)
+				if err != nil {
+					return err
+				}
+				results = append(results, events)
+			}
+
+			// index this blocks txs
+			consumer.IndexTxs(results)
+		}
 	}
 
 	return nil
@@ -72,11 +77,15 @@ type txIndex struct {
 
 // NewTxIndex creates new KV indexer.
 
-func newTxIndex(path string) (*txIndex, error) {
+func newTxIndex(path string, start, end int64) (*txIndex, error) {
 	store, err := dbm.NewGoLevelDBWithOpts("tx_index", path, &opt.Options{ReadOnly: true})
 	if err != nil {
 		return nil, err
 	}
+
+	sKey := heightKey(txKey, heightKey, start)
+	endKey := heightKey(txKey, heightKey, end)
+	store.Iterator(sKey, endKey)
 
 	return &txIndex{
 		store: store,
@@ -85,17 +94,19 @@ func newTxIndex(path string) (*txIndex, error) {
 
 // getHashes returns the tx hashes for the given height.
 func (txi *txIndex) getHashes(height int64) ([][]byte, error) {
-	key := startKey(txKey, heightKey, height)
+	key := heightKey(txKey, heightKey, height)
+
 	bz, err := txi.store.Get(key)
 	if err != nil {
 		return nil, err
 	}
+
 	if bz == nil {
-		return nil, fmt.Errorf("no txs for $%d", height)
+		return nil, nil
 	}
 
 	// cheeky way to only print lints every 1000 blocks
-	if i == 1000 {
+	if i == 500 {
 		fmt.Println(height)
 		i = 0
 	} else {
@@ -122,7 +133,7 @@ func (txi *txIndex) getTxEvents(hash []byte) (*abci.TxResult, error) {
 	return txResult, err
 }
 
-func startKey(fields ...interface{}) []byte {
+func heightKey(fields ...interface{}) []byte {
 	var b bytes.Buffer
 	for _, f := range fields {
 		b.Write([]byte(fmt.Sprintf("%v", f) + tagKeySeparator))
