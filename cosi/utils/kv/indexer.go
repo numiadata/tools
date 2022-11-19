@@ -115,7 +115,9 @@ func (txi *txIndex) getHashes(ctx context.Context, height int64) ([][]byte, erro
 		}
 	}
 
-	fmt.Println(tmpHashes, "Hashes\n\n\n")
+	if len(tmpHashes) > 0 {
+		fmt.Println(tmpHashes, "Hashes\n\n\n")
+	}
 
 	bz, err := txi.store.Get(key)
 	if err != nil {
