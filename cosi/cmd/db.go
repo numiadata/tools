@@ -39,7 +39,7 @@ func dbCmd() *cobra.Command {
 			}
 
 			// loop through specified heights and index
-			return kv.IndexTxs(ctx, consumer, args[2], start, end)
+			return kv.IndexTxs(ctx, consumer, args[2], start, end, unsafe)
 		},
 	}
 	return cmd

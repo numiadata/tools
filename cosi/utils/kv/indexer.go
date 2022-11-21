@@ -6,8 +6,10 @@ import (
 	"fmt"
 
 	"github.com/cosmos/gogoproto/proto"
+	"github.com/google/orderedcode"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/numiadata/tools/cosi/utils/pubsub"
@@ -25,11 +27,13 @@ import (
 const (
 	tagKeySeparator = "/"
 	txKey           = "tx.height"
+
+	blockPrefix = "block_events"
 )
 
 var j int64
 
-func IndexTxs(ctx context.Context, consumer *pubsub.EventSink, path string, start, end int64) error {
+func IndexTxs(ctx context.Context, consumer *pubsub.EventSink, path string, start, end int64, unsafe bool) error {
 
 	db, err := newTxIndex(path, start, end)
 	if err != nil {
@@ -47,7 +51,7 @@ func IndexTxs(ctx context.Context, consumer *pubsub.EventSink, path string, star
 			fmt.Println("no txs for height", i)
 			continue
 		}
-
+		fmt.Println("height ", i)
 		// cheeky way to only print lints every 1000 blocks
 		if j == 500 {
 			fmt.Println(i, "500")
@@ -68,14 +72,14 @@ func IndexTxs(ctx context.Context, consumer *pubsub.EventSink, path string, star
 			}
 
 			// index this blocks txs
-			consumer.IndexTxs(results)
+			consumer.IndexTxs(results, unsafe)
 		}
 	}
 
 	return nil
 }
 
-// TxIndexer is an interface for indexing transactions.
+// TxIndexer is an implementation for indexing transactions.
 
 // txIndex is the simplest possible indexer, backed by key-value storage (levelDB).
 type txIndex struct {
@@ -158,4 +162,36 @@ func heightKey(fields ...interface{}) []byte {
 		b.Write([]byte(fmt.Sprintf("%v", f) + tagKeySeparator))
 	}
 	return b.Bytes()
+}
+
+// BlockIndexer is an implementation for indexing block events.
+
+type blockerIndexer struct {
+	store dbm.DB
+}
+
+func New(store dbm.DB) *blockerIndexer {
+	prefixStore := dbm.NewPrefixDB(store, []byte(blockPrefix))
+	return &blockerIndexer{
+		store: prefixStore,
+	}
+}
+
+// Has returns true if the given height has been indexed. An error is returned
+// upon database query failure.
+func (idx *blockerIndexer) Has(height int64) (bool, error) {
+	key, err := blockHeightKey(height)
+	if err != nil {
+		return false, fmt.Errorf("failed to create block height index key: %w", err)
+	}
+
+	return idx.store.Has(key)
+}
+
+func blockHeightKey(height int64) ([]byte, error) {
+	return orderedcode.Append(
+		nil,
+		types.BlockHeightKey,
+		height,
+	)
 }

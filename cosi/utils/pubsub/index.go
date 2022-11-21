@@ -188,7 +188,7 @@ func (es *EventSink) IndexBlock(h types.EventDataNewBlockHeader) error {
 	return nil
 }
 
-func (es *EventSink) IndexTxs(txrs []*abci.TxResult) error {
+func (es *EventSink) IndexTxs(txrs []*abci.TxResult, unsafe bool) error {
 	fmt.Println("indexing txs", len(txrs))
 
 	results := make([]*pubsub.PublishResult, len(txrs))
@@ -219,10 +219,12 @@ func (es *EventSink) IndexTxs(txrs []*abci.TxResult) error {
 		results[i] = res
 	}
 
-	// wait for all messages to be be sent (or failed to be sent) to the server
-	for _, r := range results {
-		if _, err := r.Get(context.Background()); err != nil {
-			return fmt.Errorf("failed to publish pubsub message: %w", err)
+	if !unsafe {
+		// wait for all messages to be be sent (or failed to be sent) to the server
+		for _, r := range results {
+			if _, err := r.Get(context.Background()); err != nil {
+				return fmt.Errorf("failed to publish pubsub message: %w", err)
+			}
 		}
 	}
 
