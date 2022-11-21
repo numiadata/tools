@@ -219,7 +219,8 @@ func (es *EventSink) IndexTxs(txrs []*abci.TxResult, unsafe bool) error {
 		results[i] = res
 	}
 
-	if !unsafe {
+	if unsafe {
+		fmt.Println("safe")
 		// wait for all messages to be be sent (or failed to be sent) to the server
 		for _, r := range results {
 			if _, err := r.Get(context.Background()); err != nil {
