@@ -39,7 +39,7 @@ func IndexTxs(ctx context.Context, consumer *pubsub.EventSink, path string, star
 		return err
 	}
 
-	pool := pond.New(100, 1000)
+	pool := pond.New(500, 5000)
 
 	//TODO see if this can be concurrent
 	for i := start; i < end; i++ {
