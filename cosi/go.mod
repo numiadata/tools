@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	cloud.google.com/go/pubsub v1.3.1
+	github.com/alitto/pond v1.8.2
 	github.com/cosmos/gogoproto v1.4.3
 	github.com/gogo/protobuf v1.3.2
 	github.com/google/orderedcode v0.0.1

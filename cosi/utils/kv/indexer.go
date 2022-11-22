@@ -12,6 +12,7 @@ import (
 	"github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/alitto/pond"
 	"github.com/numiadata/tools/cosi/utils/pubsub"
 )
 
@@ -31,52 +32,59 @@ const (
 	blockPrefix = "block_events"
 )
 
-var j int64
-
 func IndexTxs(ctx context.Context, consumer *pubsub.EventSink, path string, start, end int64, unsafe bool) error {
 
 	db, err := newTxIndex(path, start, end)
 	if err != nil {
 		return err
 	}
+
+	pool := pond.New(10, 100)
+
 	//TODO see if this can be concurrent
 	for i := start; i < end; i++ {
-		// get tx hash
-		hashes, err := db.getHashes(ctx, i)
-		if err != nil {
-			return err
-		}
+		n := i
+		pool.Submit(func() {
+			Index(db, ctx, consumer, n, unsafe)
+		})
 
-		if len(hashes) == 0 {
-			fmt.Println("no txs for height", i)
-			continue
-		}
-		fmt.Println("height ", i)
-		// cheeky way to only print lints every 1000 blocks
-		if j == 500 {
-			fmt.Println(i, "500")
-			j = 0
-		} else {
-			j++
-		}
-
-		if len(hashes) > 0 {
-			results := make([]*abci.TxResult, 0, len(hashes))
-			// get tx data
-			for _, hash := range hashes {
-				events, err := db.getTxEvents(hash)
-				if err != nil {
-					return err
-				}
-				results = append(results, events)
-			}
-
-			// index this blocks txs
-			consumer.IndexTxs(results, unsafe)
-		}
 	}
 
+	// Stop the pool and wait for all submitted tasks to complete
+	pool.StopAndWait()
+
 	return nil
+}
+
+func Index(db *txIndex, ctx context.Context, consumer *pubsub.EventSink, i int64, unsafe bool) {
+	// get tx hash
+	hashes, err := db.getHashes(ctx, i)
+	if err != nil {
+		// return err
+	}
+
+	if len(hashes) == 0 {
+		fmt.Println("no txs for height", i)
+
+	}
+	fmt.Println("height ", i)
+
+	if len(hashes) > 0 {
+		results := make([]*abci.TxResult, 0, len(hashes))
+		// get tx data
+		for _, hash := range hashes {
+			events, err := db.getTxEvents(hash)
+			if err != nil {
+				// return err
+			}
+			results = append(results, events)
+		}
+
+		// index this blocks txs
+		consumer.IndexTxs(results, unsafe)
+	}
+
+	// return nil
 }
 
 // TxIndexer is an implementation for indexing transactions.
