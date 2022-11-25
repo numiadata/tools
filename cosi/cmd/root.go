@@ -39,7 +39,7 @@ func NewRootCmd() *cobra.Command {
 
 	rootCmd.AddCommand(
 		rpcCmd(),
-		dbCmd(),
+		kvCmd(),
 	)
 
 	return rootCmd

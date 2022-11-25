@@ -95,16 +95,11 @@ type txIndex struct {
 }
 
 // NewTxIndex creates new KV indexer.
-
 func newTxIndex(path string, start, end int64) (*txIndex, error) {
 	store, err := dbm.NewGoLevelDBWithOpts("tx_index", path, &opt.Options{ReadOnly: true})
 	if err != nil {
 		return nil, err
 	}
-
-	// sKey := heightKey(txKey, heightKey, start)
-	// endKey := heightKey(txKey, heightKey, end)
-	// store.Iterator(sKey, endKey)
 
 	return &txIndex{
 		store: store,
