@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	cloud.google.com/go/pubsub v1.3.1
-	github.com/alitto/pond v1.8.2
 	github.com/cosmos/gogoproto v1.4.3
 	github.com/gogo/protobuf v1.3.2
 	github.com/google/orderedcode v0.0.1
@@ -13,7 +12,8 @@ require (
 	github.com/spf13/viper v1.13.0
 	github.com/syndtr/goleveldb v1.0.1-0.20200815110645-5c35d600f0ca
 	github.com/tendermint/tendermint v0.34.22
-	github.com/tendermint/tm-db v0.6.6
+	github.com/tendermint/tm-db v0.6.7-0.20211116222540-a25e8a84a035
+	google.golang.org/protobuf v1.28.1
 )
 
 require (
@@ -83,7 +83,6 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20221027153422-115e99e71e1c // indirect
 	google.golang.org/grpc v1.50.1 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

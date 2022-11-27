@@ -42,6 +42,7 @@ func NewRootCmd() *cobra.Command {
 		kvCmd(),
 		stateCmd(),
 		baseHeightCmd(),
+		compactStateCmd(),
 	)
 
 	return rootCmd

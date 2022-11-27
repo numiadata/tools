@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
@@ -107,7 +108,6 @@ func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, 
 }
 
 func GetBaseHeight(path string) (int64, int64, error) {
-
 	statedb, err := newStateStore(path)
 	if err != nil {
 		return 0, 0, fmt.Errorf("new stateStore: %w", err)
@@ -116,6 +116,29 @@ func GetBaseHeight(path string) (int64, int64, error) {
 	base, height := statedb.loadBlockStoreState()
 
 	return base, height, nil
+}
+
+func ForceCompact(path string) error {
+
+	state, err := dbm.NewGoLevelDBWithOpts("state", path, &opt.Options{Filter: filter.NewBloomFilter(10)})
+	if err != nil {
+		return err
+	}
+
+	block, err := dbm.NewGoLevelDBWithOpts("blockstore", path, &opt.Options{Filter: filter.NewBloomFilter(10)})
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("compacting state db")
+	if err := state.ForceCompact(nil, nil); err != nil {
+		return fmt.Errorf("force compact state: %w", err)
+	}
+
+	fmt.Println("compacting block db")
+	err = block.ForceCompact(nil, nil)
+
+	return fmt.Errorf("force compact blockstore: %w", err)
 }
 
 type stateStore struct {
