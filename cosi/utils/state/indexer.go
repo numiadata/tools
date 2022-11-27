@@ -62,6 +62,7 @@ func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, 
 
 	for i := start; i < end; i++ {
 
+		fmt.Println("height", i)
 		// indexing blocks
 		res, err := statedb.getABCIResponses(i)
 		if err != nil {

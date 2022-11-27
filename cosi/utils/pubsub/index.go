@@ -186,13 +186,10 @@ func (es *EventSink) IndexBlock(h types.EventDataNewBlockHeader, unsafe bool) er
 			}
 		}
 	}
-	fmt.Println("indexed block")
 	return nil
 }
 
 func (es *EventSink) IndexTxs(txrs []*TxResult, unsafe bool) error {
-	fmt.Println("indexing txs", len(txrs))
-
 	results := make([]*pubsub.PublishResult, len(txrs))
 	for i, txr := range txrs {
 		buf := new(bytes.Buffer)
