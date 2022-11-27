@@ -134,14 +134,10 @@ func newStateStore(path string) (*stateStore, error) {
 		return nil, err
 	}
 
-	ss := &stateStore{
+	return &stateStore{
 		state: state,
 		block: block,
-	}
-
-	fmt.Println(ss.loadBlockStoreState())
-
-	return ss, nil
+	}, nil
 }
 
 // GetABCIResponses returns the ABCIResponses for the given height.
