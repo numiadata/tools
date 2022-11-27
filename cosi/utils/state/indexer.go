@@ -13,6 +13,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
+	tmstore "github.com/tendermint/tendermint/proto/tendermint/store"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"github.com/tendermint/tendermint/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -120,10 +121,14 @@ func newStateStore(path string, start, end int64) (*stateStore, error) {
 		return nil, err
 	}
 
-	return &stateStore{
+	ss := &stateStore{
 		state: state,
 		block: block,
-	}, nil
+	}
+
+	fmt.Println(ss.loadBlockStoreState())
+
+	return ss, nil
 }
 
 // GetABCIResponses returns the ABCIResponses for the given height.
@@ -245,4 +250,31 @@ func (bs *stateStore) loadBlockPart(height int64, index int) *types.Part {
 
 func calcBlockPartKey(height int64, partIndex int) []byte {
 	return []byte(fmt.Sprintf("P:%v:%v", height, partIndex))
+}
+
+// LoadBlockStoreState returns the BlockStoreState as loaded from disk.
+// If no BlockStoreState was previously persisted, it returns the zero value.
+var blockStoreKey = []byte("blockStore")
+
+func (bs *stateStore) loadBlockStoreState() (base int64, height int64) {
+	bytes, err := bs.block.Get(blockStoreKey)
+	if err != nil {
+		panic(err)
+	}
+
+	if len(bytes) == 0 {
+		return 0, 0
+	}
+
+	var bsj tmstore.BlockStoreState
+	if err := proto.Unmarshal(bytes, &bsj); err != nil {
+		panic(fmt.Sprintf("Could not unmarshal bytes: %X", bytes))
+	}
+
+	// Backwards compatibility with persisted data from before Base existed.
+	if bsj.Height > 0 && bsj.Base == 0 {
+		bsj.Base = 1
+	}
+
+	return bsj.Base, bsj.Height
 }
