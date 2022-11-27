@@ -28,7 +28,7 @@ var count uint64
 // The state package defines indexing the state.db
 func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, end int64, unsafe bool) error {
 
-	statedb, err := newStateStore(path, start, end)
+	statedb, err := newStateStore(path)
 	if err != nil {
 		return fmt.Errorf("new stateStore: %w", err)
 	}
@@ -71,19 +71,19 @@ func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, 
 
 		b := statedb.loadBlock(i)
 
-		eventBlock := tmtypes.EventDataNewBlockHeader{
+		e := tmtypes.EventDataNewBlockHeader{
 			ResultBeginBlock: *res.BeginBlock,
 			ResultEndBlock:   *res.EndBlock,
 			Header:           b.Header,
 			NumTxs:           int64(len(b.Data.Txs)),
 		}
 
-		consumer.IndexBlock(eventBlock, true)
+		consumer.IndexBlock(e, true)
 
 		// indexing txs
 
 		var batch = make([]*pubsub.TxResult, 0, len(b.Data.Txs))
-		if len(res.DeliverTxs) > 0 {
+		if e.NumTxs > 0 {
 
 			for i := range b.Data.Txs {
 				tr := &pubsub.TxResult{
@@ -106,12 +106,24 @@ func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, 
 	return nil
 }
 
+func GetBaseHeight(path string) (int64, int64, error) {
+
+	statedb, err := newStateStore(path)
+	if err != nil {
+		return 0, 0, fmt.Errorf("new stateStore: %w", err)
+	}
+
+	base, height := statedb.loadBlockStoreState()
+
+	return base, height, nil
+}
+
 type stateStore struct {
 	state dbm.DB
 	block dbm.DB
 }
 
-func newStateStore(path string, start, end int64) (*stateStore, error) {
+func newStateStore(path string) (*stateStore, error) {
 	state, err := dbm.NewGoLevelDBWithOpts("state", path, &opt.Options{ReadOnly: true})
 	if err != nil {
 		return nil, err

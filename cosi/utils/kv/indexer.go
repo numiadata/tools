@@ -12,7 +12,6 @@ import (
 	"github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/alitto/pond"
 	"github.com/numiadata/tools/cosi/utils/pubsub"
 )
 
@@ -39,19 +38,9 @@ func IndexTxs(ctx context.Context, consumer *pubsub.EventSink, path string, star
 		return err
 	}
 
-	pool := pond.New(250, 2500)
-
-	//TODO see if this can be concurrent
 	for i := start; i < end; i++ {
-		n := i
-		pool.Submit(func() {
-			Index(db, ctx, consumer, n, unsafe)
-		})
-
+		Index(db, ctx, consumer, i, unsafe)
 	}
-
-	// Stop the pool and wait for all submitted tasks to complete
-	pool.StopAndWait()
 
 	return nil
 }
