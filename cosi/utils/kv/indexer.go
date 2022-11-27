@@ -70,14 +70,15 @@ func Index(db *txIndex, ctx context.Context, consumer *pubsub.EventSink, i int64
 	fmt.Println("height ", i)
 
 	if len(hashes) > 0 {
-		results := make([]*abci.TxResult, 0, len(hashes))
+		results := make([]*pubsub.TxResult, 0, len(hashes))
 		// get tx data
 		for _, hash := range hashes {
-			events, err := db.getTxEvents(hash)
+			_, err := db.getTxEvents(hash)
 			if err != nil {
 				// return err
 			}
-			results = append(results, events)
+
+			// results = append(results, events)
 		}
 
 		// index this blocks txs

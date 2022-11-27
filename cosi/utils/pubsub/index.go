@@ -11,7 +11,6 @@ import (
 	"cloud.google.com/go/pubsub"
 	"github.com/gogo/protobuf/jsonpb"
 
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -113,7 +112,7 @@ func NewEventSink() (*EventSink, error) {
 // the chain ID and the message type. An error is returned if any encoding error
 // is detected or if any message fails to publish.
 
-func (es *EventSink) IndexBlock(h types.EventDataNewBlockHeader) error {
+func (es *EventSink) IndexBlock(h types.EventDataNewBlockHeader, unsafe bool) error {
 	buf := new(bytes.Buffer)
 	blockHeightStr := strconv.Itoa(int(h.Header.Height))
 
@@ -178,17 +177,20 @@ func (es *EventSink) IndexBlock(h types.EventDataNewBlockHeader) error {
 	)
 	results = append(results, res)
 
-	// wait for all messages to be be sent (or failed to be sent) to the server
-	for _, r := range results {
-		if _, err := r.Get(context.Background()); err != nil {
-			return fmt.Errorf("failed to publish pubsub message: %w", err)
+	if !unsafe {
+		fmt.Println("safe")
+		// wait for all messages to be be sent (or failed to be sent) to the server
+		for _, r := range results {
+			if _, err := r.Get(context.Background()); err != nil {
+				return fmt.Errorf("failed to publish pubsub message: %w", err)
+			}
 		}
 	}
 	fmt.Println("indexed block")
 	return nil
 }
 
-func (es *EventSink) IndexTxs(txrs []*abci.TxResult, unsafe bool) error {
+func (es *EventSink) IndexTxs(txrs []*TxResult, unsafe bool) error {
 	fmt.Println("indexing txs", len(txrs))
 
 	results := make([]*pubsub.PublishResult, len(txrs))
