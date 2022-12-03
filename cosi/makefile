@@ -11,7 +11,7 @@ build:
 
 install:
 	@echo "Installing Cosi"
-	@go install -mod readonly $(BUILD_FLAGS) ./...
+	@go install -mod readonly ./...
 
 clean:
 	rm -rf build

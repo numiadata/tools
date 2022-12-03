@@ -4,11 +4,13 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
 	blocks  uint64
 	appName = "cosi"
+	unsafe  bool
 )
 
 // NewRootCmd returns the root command for relayer.
@@ -29,9 +31,18 @@ func NewRootCmd() *cobra.Command {
 		return nil
 	}
 
+	// --unsafe flag
+	rootCmd.PersistentFlags().BoolVar(&unsafe, "unsafe", true, "dont wait on delivery confirmation")
+	if err := viper.BindPFlag("unsafe", rootCmd.PersistentFlags().Lookup("unsafe")); err != nil {
+		panic(err)
+	}
+
 	rootCmd.AddCommand(
 		rpcCmd(),
-		dbCmd(),
+		kvCmd(),
+		stateCmd(),
+		baseHeightCmd(),
+		compactStateCmd(),
 	)
 
 	return rootCmd
