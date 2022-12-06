@@ -11,7 +11,6 @@ import (
 	"cloud.google.com/go/pubsub"
 	"github.com/gogo/protobuf/jsonpb"
 
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -42,9 +41,11 @@ type EventSink struct {
 }
 
 func NewEventSink(projectID, topic, chainID string) (*EventSink, error) {
+
 	if s := os.Getenv(credsEnvVar); len(s) == 0 {
 		return nil, fmt.Errorf("missing '%s' environment variable", credsEnvVar)
 	}
+
 	fmt.Println("started pubsub")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -63,7 +64,7 @@ func NewEventSink(projectID, topic, chainID string) (*EventSink, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for topic '%s': %w", topic, err)
 	}
-	fmt.Println(topic)
+
 	if !ok {
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
@@ -87,7 +88,7 @@ func NewEventSink(projectID, topic, chainID string) (*EventSink, error) {
 // the chain ID and the message type. An error is returned if any encoding error
 // is detected or if any message fails to publish.
 
-func (es *EventSink) IndexBlock(h types.EventDataNewBlockHeader) error {
+func (es *EventSink) IndexBlock(h types.EventDataNewBlockHeader, unsafe bool) error {
 	buf := new(bytes.Buffer)
 	blockHeightStr := strconv.Itoa(int(h.Header.Height))
 
@@ -152,18 +153,19 @@ func (es *EventSink) IndexBlock(h types.EventDataNewBlockHeader) error {
 	)
 	results = append(results, res)
 
-	// wait for all messages to be be sent (or failed to be sent) to the server
-	for _, r := range results {
-		if _, err := r.Get(context.Background()); err != nil {
-			return fmt.Errorf("failed to publish pubsub message: %w", err)
+	if !unsafe {
+		fmt.Println("safe")
+		// wait for all messages to be be sent (or failed to be sent) to the server
+		for _, r := range results {
+			if _, err := r.Get(context.Background()); err != nil {
+				return fmt.Errorf("failed to publish pubsub message: %w", err)
+			}
 		}
 	}
-	fmt.Println("indexed block")
 	return nil
 }
 
-func (es *EventSink) IndexTxs(txrs []*abci.TxResult) error {
-
+func (es *EventSink) IndexTxs(txrs []*TxResult, unsafe bool) error {
 	results := make([]*pubsub.PublishResult, len(txrs))
 	for i, txr := range txrs {
 		buf := new(bytes.Buffer)
@@ -192,10 +194,13 @@ func (es *EventSink) IndexTxs(txrs []*abci.TxResult) error {
 		results[i] = res
 	}
 
-	// wait for all messages to be be sent (or failed to be sent) to the server
-	for _, r := range results {
-		if _, err := r.Get(context.Background()); err != nil {
-			return fmt.Errorf("failed to publish pubsub message: %w", err)
+	if !unsafe {
+		fmt.Println("safe")
+		// wait for all messages to be be sent (or failed to be sent) to the server
+		for _, r := range results {
+			if _, err := r.Get(context.Background()); err != nil {
+				return fmt.Errorf("failed to publish pubsub message: %w", err)
+			}
 		}
 	}
 

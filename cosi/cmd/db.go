@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -10,6 +11,13 @@ import (
 
 	"github.com/numiadata/tools/cosi/utils/kv"
 	"github.com/numiadata/tools/cosi/utils/state"
+)
+
+const (
+	//todo: migrate this to flags
+	projectIDEnvVar = "PROJECT_ID"
+	topicEnvVar     = "TOPIC"
+	chainIDEnvVar   = "CHAIN_ID"
 )
 
 // this command is used for reinstalling the events using a local db
@@ -36,7 +44,22 @@ func kvCmd() *cobra.Command {
 				return err
 			}
 
-			consumer, err := pubsub.NewEventSink()
+			projectID := os.Getenv(projectIDEnvVar)
+			if len(projectID) == 0 {
+				return fmt.Errorf("missing '%s' environment variable", projectIDEnvVar)
+			}
+
+			topic := os.Getenv(topicEnvVar)
+			if len(topic) == 0 {
+				return fmt.Errorf("missing '%s' environment variable", topicEnvVar)
+			}
+
+			chainID := os.Getenv(chainIDEnvVar)
+			if len(chainID) == 0 {
+				return fmt.Errorf("missing '%s' environment variable", chainIDEnvVar)
+			}
+
+			consumer, err := pubsub.NewEventSink(projectID, topic, chainID)
 			if err != nil {
 				return err
 			}
@@ -72,7 +95,22 @@ func stateCmd() *cobra.Command {
 				return err
 			}
 
-			consumer, err := pubsub.NewEventSink()
+			projectID := os.Getenv(projectIDEnvVar)
+			if len(projectID) == 0 {
+				return fmt.Errorf("missing '%s' environment variable", projectIDEnvVar)
+			}
+
+			topic := os.Getenv(topicEnvVar)
+			if len(topic) == 0 {
+				return fmt.Errorf("missing '%s' environment variable", topicEnvVar)
+			}
+
+			chainID := os.Getenv(chainIDEnvVar)
+			if len(chainID) == 0 {
+				return fmt.Errorf("missing '%s' environment variable", chainIDEnvVar)
+			}
+
+			consumer, err := pubsub.NewEventSink(projectID, topic, chainID)
 			if err != nil {
 				return err
 			}
