@@ -45,25 +45,10 @@ type EventSink struct {
 	chainID string
 }
 
-func NewEventSink() (*EventSink, error) {
+func NewEventSink(projectID, topic, chainID string) (*EventSink, error) {
 
 	if s := os.Getenv(credsEnvVar); len(s) == 0 {
 		return nil, fmt.Errorf("missing '%s' environment variable", credsEnvVar)
-	}
-
-	projectID := os.Getenv(projectIDEnvVar)
-	if len(projectID) == 0 {
-		return nil, fmt.Errorf("missing '%s' environment variable", projectIDEnvVar)
-	}
-
-	topic := os.Getenv(topicEnvVar)
-	if len(topic) == 0 {
-		return nil, fmt.Errorf("missing '%s' environment variable", topicEnvVar)
-	}
-
-	chainID := os.Getenv(chainIDEnvVar)
-	if len(chainID) == 0 {
-		return nil, fmt.Errorf("missing '%s' environment variable", chainIDEnvVar)
 	}
 
 	fmt.Println("started pubsub")
