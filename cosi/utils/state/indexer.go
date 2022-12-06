@@ -20,7 +20,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/numiadata/tools/cosi/utils/pubsub"
+	"github.com/numiadata/tools/pubsub"
 )
 
 // lift count to globabl scope
