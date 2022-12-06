@@ -35,7 +35,7 @@ func (bi *BlockIndexer) Search(_ context.Context, _ *query.Query) ([]int64, erro
 }
 
 func (bi *BlockIndexer) Index(block types.EventDataNewBlockHeader) error {
-	return bi.sink.IndexBlock(block)
+	return bi.sink.IndexBlock(block, false)
 }
 
 // TxIndexer implements a wrapper around the Pubsub sink and supports tx
@@ -49,11 +49,18 @@ func NewTxIndexer(sink *EventSink) *TxIndexer {
 }
 
 func (ti *TxIndexer) AddBatch(batch *txindex.Batch) error {
-	return ti.sink.IndexTxs(batch.Ops)
+	ops := make([]*TxResult, len(batch.Ops))
+	for i, tx := range batch.Ops {
+		ops[i] = &TxResult{Tx: tx.Tx, Height: tx.Height, Index: tx.Index, Result: tx.Result} // TODO: missing timestamp
+	}
+
+	return ti.sink.IndexTxs(ops, false)
 }
 
 func (ti *TxIndexer) Index(txr *abci.TxResult) error {
-	return ti.sink.IndexTxs([]*abci.TxResult{txr})
+	op := &TxResult{Tx: txr.Tx, Height: txr.Height, Index: txr.Index, Result: txr.Result} // TODO: missing timestamp
+
+	return ti.sink.IndexTxs([]*TxResult{op}, false)
 }
 
 func (ti *TxIndexer) Get(hash []byte) (*abci.TxResult, error) {
