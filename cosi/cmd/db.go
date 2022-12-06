@@ -6,8 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/numiadata/tools/pubsub"
+
 	"github.com/numiadata/tools/cosi/utils/kv"
-	"github.com/numiadata/tools/cosi/utils/pubsub"
 	"github.com/numiadata/tools/cosi/utils/state"
 )
 

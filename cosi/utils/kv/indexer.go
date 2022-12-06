@@ -12,7 +12,7 @@ import (
 	"github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/numiadata/tools/cosi/utils/pubsub"
+	"github.com/numiadata/tools/pubsub"
 )
 
 // Data in the tx_index.db is stored as
