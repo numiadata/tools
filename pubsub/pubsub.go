@@ -17,11 +17,6 @@ import (
 const (
 	credsEnvVar = "GOOGLE_APPLICATION_CREDENTIALS"
 
-	//todo: migrate this to flags
-	projectIDEnvVar = "PROJECT_ID"
-	topicEnvVar     = "TOPIC"
-	chainIDEnvVar   = "CHAIN_ID"
-
 	AttrKeyChainID     = "chain_id"
 	AttrKeyBlockHeight = "block_height"
 	AttrKeyTxHash      = "tx_hash"
