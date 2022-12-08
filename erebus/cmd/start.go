@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
+	"time"
 
 	"github.com/neilotoole/errgroup"
 	"github.com/numiadata/tools/erebus/config"
+	"github.com/radovskyb/watcher"
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 )
 
@@ -52,6 +56,11 @@ func startCmdHandler(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("state streaming directory '%s' does not exist", stateStreamDir)
 	}
 
+	ssFilePrefix, err := cmd.Flags().GetString(flagFilePrefix)
+	if err != nil {
+		return err
+	}
+
 	logger, err := getCmdLogger(cmd)
 	if err != nil {
 		return err
@@ -63,9 +72,72 @@ func startCmdHandler(cmd *cobra.Command, args []string) error {
 	// listen for and trap any OS signal to gracefully shutdown and exit
 	trapSignal(cancel, logger)
 
+	w, err := createFileWatcher(stateStreamDir, ssFilePrefix)
+	if err != nil {
+		return err
+	}
+
 	g.Go(func() error {
-		return nil
+		return watchStreamingDir(ctx, logger, w)
 	})
 
-	return nil
+	// Block main process until all spawned goroutines have gracefully exited and
+	// signal has been captured in the main process or if an error occurs.
+	return g.Wait()
+}
+
+func createFileWatcher(stateStreamDir, ssFilePrefix string) (*watcher.Watcher, error) {
+	w := watcher.New()
+
+	// SetMaxEvents to 1 to allow at most 1 event's to be received
+	// on the Event channel per watching cycle.
+	//
+	// If SetMaxEvents is not set, the default is to send all events.
+	w.SetMaxEvents(1)
+
+	// Only notify when files are written to, this will allow us to capture new
+	// files and files currently being written to.
+	w.FilterOps(watcher.Write)
+
+	// Only files that match the regular expression during file listings will be
+	// watched.
+	r := regexp.MustCompile(fmt.Sprintf("^%s", ssFilePrefix))
+	w.AddFilterHook(watcher.RegexFilterHook(r, false))
+
+	if err := w.Add(stateStreamDir); err != nil {
+		return nil, fmt.Errorf("failed to add %s to directory watcher: %v", stateStreamDir, err)
+	}
+
+	return w, nil
+}
+
+func watchStreamingDir(ctx context.Context, logger zerolog.Logger, w *watcher.Watcher) error {
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- w.Start(time.Millisecond * 100)
+	}()
+
+	for {
+		select {
+		case event := <-w.Event:
+			fmt.Printf("%+v\n", event)
+
+		case <-ctx.Done():
+			// Context was explicitly cancelled due to a signal capture so we can safely
+			// close the the watcher. This will cause the watch process to safely exit.
+			w.Close()
+			return ctx.Err()
+
+		case err := <-w.Error:
+			logger.Error().Err(err).Msg("directory watch failure")
+			return err
+
+		case <-w.Closed:
+			return nil
+
+		case err := <-errCh:
+			logger.Error().Err(err).Msg("directory watch failure")
+			return err
+		}
+	}
 }

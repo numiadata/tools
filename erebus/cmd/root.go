@@ -18,9 +18,12 @@ const (
 	flagStateStreamingDir = "state-streaming-dir"
 	flagLogLevel          = "log-level"
 	flagLogFormat         = "log-format"
+	flagFilePrefix        = "file-prefix"
 
 	logLevelJSON = "json"
 	logLevelText = "text"
+
+	defaultFilePrefix = "block-"
 )
 
 func Execute() error {
@@ -47,6 +50,7 @@ func NewRootCmd() *cobra.Command {
 	cmd.PersistentFlags().String(flagStateStreamingDir, "", "Path to the state streaming directory")
 	cmd.PersistentFlags().String(flagLogLevel, zerolog.InfoLevel.String(), "logging level")
 	cmd.PersistentFlags().String(flagLogFormat, logLevelText, "logging format; must be either json or text")
+	cmd.PersistentFlags().String(flagFilePrefix, defaultFilePrefix, "File prefix for state streamed files")
 
 	return cmd
 }
