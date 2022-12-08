@@ -33,11 +33,6 @@ will attempt to examine missing consumed files and handle them appropriately.
 }
 
 func startCmdHandler(cmd *cobra.Command, args []string) error {
-	cfgFile, err := cmd.Flags().GetString(flagConfig)
-	if err != nil {
-		return err
-	}
-
 	cfg, err := config.Parse(cfgFile)
 	if err != nil {
 		return err
@@ -47,18 +42,8 @@ func startCmdHandler(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	stateStreamDir, err := cmd.Flags().GetString(flagStateStreamingDir)
-	if err != nil {
-		return err
-	}
-
 	if _, err := os.Stat(stateStreamDir); os.IsNotExist(err) {
 		return fmt.Errorf("state streaming directory '%s' does not exist", stateStreamDir)
-	}
-
-	ssFilePrefix, err := cmd.Flags().GetString(flagFilePrefix)
-	if err != nil {
-		return err
 	}
 
 	logger, err := getCmdLogger(cmd)
@@ -72,14 +57,8 @@ func startCmdHandler(cmd *cobra.Command, args []string) error {
 	// listen for and trap any OS signal to gracefully shutdown and exit
 	trapSignal(cancel, logger)
 
-	w, err := createFileWatcher(stateStreamDir, ssFilePrefix)
-	if err != nil {
-		return err
-	}
-
 	g.Go(func() error {
-		logger.Info().Str("dir", stateStreamDir).Str("file_prefix", ssFilePrefix).Msg("watching state streaming directory")
-		return watchStreamingDir(ctx, logger, w)
+		return watchStreamingDir(ctx, logger)
 	})
 
 	// Block main process until all spawned goroutines have gracefully exited and
@@ -87,7 +66,7 @@ func startCmdHandler(cmd *cobra.Command, args []string) error {
 	return g.Wait()
 }
 
-func createFileWatcher(stateStreamDir, ssFilePrefix string) (*watcher.Watcher, error) {
+func createFileWatcher() (*watcher.Watcher, error) {
 	w := watcher.New()
 
 	// SetMaxEvents to 1 to allow at most 1 event's to be received
@@ -112,11 +91,18 @@ func createFileWatcher(stateStreamDir, ssFilePrefix string) (*watcher.Watcher, e
 	return w, nil
 }
 
-func watchStreamingDir(ctx context.Context, logger zerolog.Logger, w *watcher.Watcher) error {
+func watchStreamingDir(ctx context.Context, logger zerolog.Logger) error {
+	w, err := createFileWatcher()
+	if err != nil {
+		return err
+	}
+
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- w.Start(time.Millisecond * 100)
 	}()
+
+	logger.Info().Str("dir", stateStreamDir).Str("file_prefix", ssFilePrefix).Msg("watching state streaming directory")
 
 	for {
 		select {

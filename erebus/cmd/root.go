@@ -26,6 +26,12 @@ const (
 	defaultFilePrefix = "block-"
 )
 
+var (
+	ssFilePrefix   string
+	stateStreamDir string
+	cfgFile        string
+)
+
 func Execute() error {
 	cobra.EnableCommandSorting = false
 
@@ -46,11 +52,11 @@ func NewRootCmd() *cobra.Command {
 		Short: "Listen for Cosmos SDK state streaming files and publish them to a sink",
 	}
 
-	cmd.PersistentFlags().String(flagConfig, "", "Path to the configuration file")
-	cmd.PersistentFlags().String(flagStateStreamingDir, "", "Path to the state streaming directory")
+	cmd.PersistentFlags().StringVar(&cfgFile, flagConfig, "", "Path to the configuration file")
+	cmd.PersistentFlags().StringVar(&ssFilePrefix, flagFilePrefix, defaultFilePrefix, "File prefix for state streamed files")
+	cmd.PersistentFlags().StringVar(&stateStreamDir, flagStateStreamingDir, "", "Path to the state streaming directory")
 	cmd.PersistentFlags().String(flagLogLevel, zerolog.InfoLevel.String(), "logging level")
 	cmd.PersistentFlags().String(flagLogFormat, logLevelText, "logging format; must be either json or text")
-	cmd.PersistentFlags().String(flagFilePrefix, defaultFilePrefix, "File prefix for state streamed files")
 
 	return cmd
 }
