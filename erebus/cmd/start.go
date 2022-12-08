@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 
+	"github.com/neilotoole/errgroup"
 	"github.com/numiadata/tools/erebus/config"
 	"github.com/spf13/cobra"
 )
@@ -49,6 +51,21 @@ func startCmdHandler(cmd *cobra.Command, args []string) error {
 	if _, err := os.Stat(stateStreamDir); os.IsNotExist(err) {
 		return fmt.Errorf("state streaming directory '%s' does not exist", stateStreamDir)
 	}
+
+	logger, err := getCmdLogger(cmd)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithCancel(cmd.Context())
+	g, ctx := errgroup.WithContext(ctx)
+
+	// listen for and trap any OS signal to gracefully shutdown and exit
+	trapSignal(cancel, logger)
+
+	g.Go(func() error {
+		return nil
+	})
 
 	return nil
 }
