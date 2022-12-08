@@ -78,6 +78,7 @@ func startCmdHandler(cmd *cobra.Command, args []string) error {
 	}
 
 	g.Go(func() error {
+		logger.Info().Str("dir", stateStreamDir).Str("file_prefix", ssFilePrefix).Msg("watching state streaming directory")
 		return watchStreamingDir(ctx, logger, w)
 	})
 
