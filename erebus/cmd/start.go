@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/numiadata/tools/erebus/config"
 	"github.com/spf13/cobra"
 )
@@ -36,6 +39,15 @@ func startCmdHandler(cmd *cobra.Command, args []string) error {
 
 	if err := cfg.Validate(); err != nil {
 		return err
+	}
+
+	stateStreamDir, err := cmd.Flags().GetString(flagStateStreamingDir)
+	if err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(stateStreamDir); os.IsNotExist(err) {
+		return fmt.Errorf("state streaming directory '%s' does not exist", stateStreamDir)
 	}
 
 	return nil
