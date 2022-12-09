@@ -17,10 +17,10 @@ import (
 func NewStartCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
-		Short: "Start erebus state streaming file consumer",
-		Long: `Start erebus state streaming file consumer. The process will watch
+		Short: "Start erebus state streaming file proxy",
+		Long: `Start erebus state streaming file proxy. The process will watch
 the configured state streaming directory for changes. New files will be parsed
-and sent to the configured sink. Existing files may have been ignored, so erebus
+and sent to the configured consumer. Existing files may have been ignored, so erebus
 will attempt to examine missing consumed files and handle them appropriately.
 `,
 		RunE: startCmdHandler,

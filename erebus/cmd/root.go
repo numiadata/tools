@@ -49,7 +49,7 @@ func Execute() error {
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "erebus",
-		Short: "Listen for Cosmos SDK state streaming files and publish them to a sink",
+		Short: "Listen for Cosmos SDK state streaming files and publish them to a consumer",
 	}
 
 	cmd.PersistentFlags().StringVar(&cfgFile, flagConfig, "", "Path to the configuration file")
