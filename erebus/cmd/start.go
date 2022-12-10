@@ -17,6 +17,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	watcherDuration      = time.Millisecond * 100
+	fileCompleteDuration = time.Second * 15
+)
+
 func NewStartCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
@@ -97,7 +102,7 @@ func watchStreamingDir(ctx context.Context, logger zerolog.Logger) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- w.Start(time.Millisecond * 100)
+		errCh <- w.Start(watcherDuration)
 	}()
 
 	logger.Info().Str("dir", stateStreamDir).Str("file_prefix", ssFilePrefix).Msg("watching state streaming directory")
@@ -171,7 +176,7 @@ func isMetaFile(filePath string) bool {
 // is returned if the file is not considered complete within a given time
 // duration.
 func waitForCompleteFile(filePath string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), fileCompleteDuration)
 	defer cancel()
 
 	for {
