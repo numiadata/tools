@@ -9,7 +9,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// IsFileComplete determines if a state streamed file is completely written.
+// IsFileComplete determines if a state streamed file is completely written. The
+// Cosmos SDK state streamer that streams to files prefixes the files with the
+// length encoded size of the data. The length prefix is scanned to determine if
+// all expected bytes are written.
 func IsFileComplete(filePath string) (bool, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
