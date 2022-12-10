@@ -9,6 +9,7 @@ import (
 
 	"github.com/neilotoole/errgroup"
 	"github.com/numiadata/tools/erebus/config"
+	"github.com/numiadata/tools/erebus/io"
 	"github.com/radovskyb/watcher"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
@@ -109,7 +110,15 @@ func watchStreamingDir(ctx context.Context, logger zerolog.Logger) error {
 			// we must ensure the file is complete prior to decoding and sending to
 			// the consumer.
 			if event.Op == watcher.Create && !event.IsDir() {
-				// event.Path
+				if err := waitForCompleteFile(event.Path); err != nil {
+					logger.Error().Err(err).Str("file", event.Path).Msg("failed to wait for file to complete; skipping...")
+				} else {
+					// TODO:
+					//
+					// 1. Determine file type
+					// 2. Parse
+					// 3. Send to consumer
+				}
 			}
 
 		case <-ctx.Done():
@@ -128,6 +137,27 @@ func watchStreamingDir(ctx context.Context, logger zerolog.Logger) error {
 		case err := <-errCh:
 			logger.Error().Err(err).Msg("directory watch failure")
 			return err
+		}
+	}
+}
+
+func waitForCompleteFile(filePath string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("timed out waiting for file '%s' to complete", filePath)
+
+		default:
+			ok, err := io.IsFileComplete(filePath)
+			if ok && err == nil {
+				cancel()
+				return nil
+			}
+
+			time.Sleep(time.Millisecond * 500)
 		}
 	}
 }
