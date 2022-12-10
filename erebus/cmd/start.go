@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	watcherDuration      = time.Millisecond * 100
-	fileCompleteDuration = time.Second * 15
+	watcherDuration     = time.Millisecond * 100
+	fileCompleteTimeout = time.Second * 15
+	fileCompleteSleep   = time.Millisecond * 500
 )
 
 func NewStartCmd() *cobra.Command {
@@ -176,7 +177,7 @@ func isMetaFile(filePath string) bool {
 // is returned if the file is not considered complete within a given time
 // duration.
 func waitForCompleteFile(filePath string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), fileCompleteDuration)
+	ctx, cancel := context.WithTimeout(context.Background(), fileCompleteTimeout)
 	defer cancel()
 
 	for {
@@ -191,7 +192,7 @@ func waitForCompleteFile(filePath string) error {
 				return nil
 			}
 
-			time.Sleep(time.Millisecond * 500)
+			time.Sleep(fileCompleteSleep)
 		}
 	}
 }
