@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/neilotoole/errgroup"
+	"github.com/numiadata/tools/erebus/codec"
 	"github.com/numiadata/tools/erebus/config"
 	"github.com/numiadata/tools/erebus/io"
 	"github.com/radovskyb/watcher"
@@ -113,11 +115,26 @@ func watchStreamingDir(ctx context.Context, logger zerolog.Logger) error {
 				if err := waitForCompleteFile(event.Path); err != nil {
 					logger.Error().Err(err).Str("file", event.Path).Msg("failed to wait for file to complete; skipping...")
 				} else {
-					// TODO:
-					//
-					// 1. Determine file type
-					// 2. Parse
-					// 3. Send to consumer
+					switch {
+					case isDataFile(event.Path):
+						pairs, err := codec.ParseDataFile(event.Path)
+						if err != nil {
+							logger.Error().Err(err).Str("file", event.Path).Msg("failed to parse data file; skipping...")
+							continue
+						}
+
+						// TODO: send to consumer
+					case isMetaFile(event.Path):
+						meta, err := codec.ParseMetaFile(event.Path)
+						if err != nil {
+							logger.Error().Err(err).Str("file", event.Path).Msg("failed to parse meta file; skipping...")
+							continue
+						}
+
+						// TODO: send to consumer
+					default:
+						logger.Error().Str("file", event.Path).Msg("unexpected file")
+					}
 				}
 			}
 
@@ -141,6 +158,18 @@ func watchStreamingDir(ctx context.Context, logger zerolog.Logger) error {
 	}
 }
 
+func isDataFile(filePath string) bool {
+	return strings.HasSuffix(filePath, "-data")
+}
+
+func isMetaFile(filePath string) bool {
+	return strings.HasSuffix(filePath, "-meta")
+}
+
+// waitForCompleteFile should be called when a new file event is triggered to
+// ensure the file is complete before we attempt to read and parse it. An error
+// is returned if the file is not considered complete within a given time
+// duration.
 func waitForCompleteFile(filePath string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
