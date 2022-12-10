@@ -69,15 +69,10 @@ func startCmdHandler(cmd *cobra.Command, args []string) error {
 func createFileWatcher() (*watcher.Watcher, error) {
 	w := watcher.New()
 
-	// SetMaxEvents to 1 to allow at most 1 event's to be received
-	// on the Event channel per watching cycle.
-	//
-	// If SetMaxEvents is not set, the default is to send all events.
-	w.SetMaxEvents(1)
-
-	// Only notify when files are written to, this will allow us to capture new
-	// files and files currently being written to.
-	w.FilterOps(watcher.Write)
+	// Only notify when files are create. If we watch for Write events, then we'll
+	// get an event every time a streamed file is written to. This means files
+	// being currently written to when erebus starts, will be missed.
+	w.FilterOps(watcher.Create)
 
 	// Only files that match the regular expression during file listings will be
 	// watched.
@@ -107,7 +102,15 @@ func watchStreamingDir(ctx context.Context, logger zerolog.Logger) error {
 	for {
 		select {
 		case event := <-w.Event:
-			fmt.Printf("%+v\n", event)
+			logger.Debug().Str("event", event.String()).Msg("received new watcher event")
+
+			// Ensure event corresponds to a newly created file. Note, the file is not
+			// guaranteed to be completely written to when the event is triggered, so
+			// we must ensure the file is complete prior to decoding and sending to
+			// the consumer.
+			if event.Op == watcher.Create && !event.IsDir() {
+
+			}
 
 		case <-ctx.Done():
 			// Context was explicitly cancelled due to a signal capture so we can safely
