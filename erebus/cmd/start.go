@@ -109,7 +109,7 @@ func watchStreamingDir(ctx context.Context, logger zerolog.Logger) error {
 			// we must ensure the file is complete prior to decoding and sending to
 			// the consumer.
 			if event.Op == watcher.Create && !event.IsDir() {
-
+				// event.Path
 			}
 
 		case <-ctx.Done():

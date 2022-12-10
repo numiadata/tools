@@ -18,6 +18,8 @@ var (
 // ParseDataFile attempts to read in a streamed data file, which contains one or
 // more length-prefixed StoreKVPair records and returns a slice of StoreKVPair
 // records decoded. An error is returned upon failure.
+//
+// NOTE: We assume the file is completely written.
 func ParseDataFile(f string) ([]storetypes.StoreKVPair, error) {
 	bz, err := os.ReadFile(f)
 	if err != nil {
@@ -45,6 +47,8 @@ func ParseDataFile(f string) ([]storetypes.StoreKVPair, error) {
 // ParseMetaFile attempts to read in a streamed metadata file, which contains
 // a single Protobuf length-prefixed encoded BlockMetadata and return a decoded
 // BlockMetadata object. An error is returned upon failure.
+//
+// NOTE: We assume the file is completely written.
 func ParseMetaFile(f string) (storetypes.BlockMetadata, error) {
 	bz, err := os.ReadFile(f)
 	if err != nil {
