@@ -26,7 +26,7 @@ func ParseDataFile(f string) ([]storetypes.StoreKVPair, error) {
 		return nil, fmt.Errorf("failed to read data file: %w", err)
 	}
 
-	segments, err := segmentBytes(bz[8:]) // strip the file length prefix prefix
+	segments, err := segmentBytes(bz[8:]) // strip the file length prefix
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse data file: %w", err)
 	}
@@ -55,7 +55,7 @@ func ParseMetaFile(f string) (storetypes.BlockMetadata, error) {
 		return storetypes.BlockMetadata{}, fmt.Errorf("failed to read meta file: %w", err)
 	}
 
-	// strip the file length prefix prefix
+	// strip the file length prefix
 	var metadata storetypes.BlockMetadata
 	if err := cdc.Unmarshal(bz[8:], &metadata); err != nil {
 		return storetypes.BlockMetadata{}, fmt.Errorf("failed to decode BlockMetadata: %w", err)
