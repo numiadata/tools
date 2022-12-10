@@ -42,6 +42,24 @@ func ParseDataFile(f string) ([]storetypes.StoreKVPair, error) {
 	return pairs, nil
 }
 
+// ParseMetaFile attempts to read in a streamed metadata file, which contains
+// a single Protobuf length-prefixed encoded BlockMetadata and return a decoded
+// BlockMetadata object. An error is returned upon failure.
+func ParseMetaFile(f string) (storetypes.BlockMetadata, error) {
+	bz, err := os.ReadFile(f)
+	if err != nil {
+		return storetypes.BlockMetadata{}, fmt.Errorf("failed to read meta file: %w", err)
+	}
+
+	// strip the useless file length prefix prefix
+	var metadata storetypes.BlockMetadata
+	if err := cdc.Unmarshal(bz[8:], &metadata); err != nil {
+		return storetypes.BlockMetadata{}, fmt.Errorf("failed to decode BlockMetadata: %w", err)
+	}
+
+	return metadata, nil
+}
+
 // segmentBytes returns all of the Protobuf encoded messages contained in the
 // slice of byte slices. Each byte slice corresponds to a Protobuf encoded
 // message. Each message has it's length prefix removed.
