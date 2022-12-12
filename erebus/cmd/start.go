@@ -11,6 +11,7 @@ import (
 	"github.com/neilotoole/errgroup"
 	"github.com/numiadata/tools/erebus/codec"
 	"github.com/numiadata/tools/erebus/config"
+	"github.com/numiadata/tools/erebus/consumer"
 	"github.com/numiadata/tools/erebus/io"
 	"github.com/radovskyb/watcher"
 	"github.com/rs/zerolog"
@@ -67,7 +68,7 @@ func startCmdHandler(cmd *cobra.Command, args []string) error {
 	trapSignal(cancel, logger)
 
 	g.Go(func() error {
-		return watchStreamingDir(ctx, logger)
+		return WatchStreamingDir(ctx, logger, stateStreamDir, stateStreamFilePrefix, consumer.NoOpConsumer{})
 	})
 
 	// Block main process until all spawned goroutines have gracefully exited and
@@ -75,28 +76,10 @@ func startCmdHandler(cmd *cobra.Command, args []string) error {
 	return g.Wait()
 }
 
-func createFileWatcher() (*watcher.Watcher, error) {
-	w := watcher.New()
-
-	// Only notify when files are create. If we watch for Write events, then we'll
-	// get an event every time a streamed file is written to. This means files
-	// being currently written to when erebus starts, will be missed.
-	w.FilterOps(watcher.Create)
-
-	// Only files that match the regular expression during file listings will be
-	// watched.
-	r := regexp.MustCompile(fmt.Sprintf("^%s", ssFilePrefix))
-	w.AddFilterHook(watcher.RegexFilterHook(r, false))
-
-	if err := w.Add(stateStreamDir); err != nil {
-		return nil, fmt.Errorf("failed to add %s to directory watcher: %v", stateStreamDir, err)
-	}
-
-	return w, nil
-}
-
-func watchStreamingDir(ctx context.Context, logger zerolog.Logger) error {
-	w, err := createFileWatcher()
+// WatchStreamingDir starts a blocking process to watch for state streaming files
+// and proxies them to a consumer.
+func WatchStreamingDir(ctx context.Context, logger zerolog.Logger, ssDir, ssFilePrefix string, c consumer.Consumer) error {
+	w, err := createFileWatcher(ssDir, ssFilePrefix)
 	if err != nil {
 		return err
 	}
@@ -106,7 +89,7 @@ func watchStreamingDir(ctx context.Context, logger zerolog.Logger) error {
 		errCh <- w.Start(watcherDuration)
 	}()
 
-	logger.Info().Str("dir", stateStreamDir).Str("file_prefix", ssFilePrefix).Msg("watching state streaming directory")
+	logger.Info().Str("dir", ssDir).Str("file_prefix", ssFilePrefix).Msg("watching state streaming directory")
 
 	for {
 		select {
@@ -122,22 +105,28 @@ func watchStreamingDir(ctx context.Context, logger zerolog.Logger) error {
 					logger.Error().Err(err).Str("file", event.Path).Msg("failed to wait for file to complete; skipping...")
 				} else {
 					switch {
-					case isDataFile(event.Path):
+					case IsDataFile(event.Path):
 						pairs, err := codec.ParseDataFile(event.Path)
 						if err != nil {
 							logger.Error().Err(err).Str("file", event.Path).Msg("failed to parse data file; skipping...")
 							continue
 						}
 
-						// TODO: send to consumer
-					case isMetaFile(event.Path):
+						c.Push(consumer.Message{
+							Type: consumer.MessageTypeData,
+							Body: pairs,
+						})
+					case IsMetaFile(event.Path):
 						meta, err := codec.ParseMetaFile(event.Path)
 						if err != nil {
 							logger.Error().Err(err).Str("file", event.Path).Msg("failed to parse meta file; skipping...")
 							continue
 						}
 
-						// TODO: send to consumer
+						c.Push(consumer.Message{
+							Type: consumer.MessageTypeMeta,
+							Body: meta,
+						})
 					default:
 						logger.Error().Str("file", event.Path).Msg("unexpected file")
 					}
@@ -164,12 +153,36 @@ func watchStreamingDir(ctx context.Context, logger zerolog.Logger) error {
 	}
 }
 
-func isDataFile(filePath string) bool {
+// IsDataFile determines if the file is a stated streamed data file, containing
+// []KVStorePair records.
+func IsDataFile(filePath string) bool {
 	return strings.HasSuffix(filePath, "-data")
 }
 
-func isMetaFile(filePath string) bool {
+// IsMetaFile determines if the file is a stated streamed metadata file,
+// containing a BlockMetadata record.
+func IsMetaFile(filePath string) bool {
 	return strings.HasSuffix(filePath, "-meta")
+}
+
+func createFileWatcher(ssDir, ssFilePrefix string) (*watcher.Watcher, error) {
+	w := watcher.New()
+
+	// Only notify when files are create. If we watch for Write events, then we'll
+	// get an event every time a streamed file is written to. This means files
+	// being currently written to when erebus starts, will be missed.
+	w.FilterOps(watcher.Create)
+
+	// Only files that match the regular expression during file listings will be
+	// watched.
+	r := regexp.MustCompile(fmt.Sprintf("^%s", ssFilePrefix))
+	w.AddFilterHook(watcher.RegexFilterHook(r, false))
+
+	if err := w.Add(ssDir); err != nil {
+		return nil, fmt.Errorf("failed to add %s to directory watcher: %v", ssDir, err)
+	}
+
+	return w, nil
 }
 
 // waitForCompleteFile should be called when a new file event is triggered to

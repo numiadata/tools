@@ -9,7 +9,7 @@ import (
 func TestParseDataFile(t *testing.T) {
 	records, err := ParseDataFile("../examples/state_streaming/block-271-data")
 	require.NoError(t, err)
-	require.NotEmpty(t, records)
+	require.Len(t, records, 12)
 }
 
 func TestParseMetaFile(t *testing.T) {
