@@ -1,0 +1,2 @@
+sink_type = "big_table"
+table_name = "foo"
