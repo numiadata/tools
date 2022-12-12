@@ -67,8 +67,11 @@ func startCmdHandler(cmd *cobra.Command, args []string) error {
 	// listen for and trap any OS signal to gracefully shutdown and exit
 	trapSignal(cancel, logger)
 
+	// TODO(bez): Create a real consumer based on CLI input.
+	c := consumer.NoOpConsumer{}
+
 	g.Go(func() error {
-		return WatchStreamingDir(ctx, logger, stateStreamDir, stateStreamFilePrefix, consumer.NoOpConsumer{})
+		return WatchStreamingDir(ctx, logger, stateStreamDir, stateStreamFilePrefix, c)
 	})
 
 	// Block main process until all spawned goroutines have gracefully exited and
