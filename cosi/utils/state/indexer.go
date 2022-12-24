@@ -302,6 +302,60 @@ func (bs *stateStore) loadBlock(height int64) *types.Block {
 	return block
 }
 
+// LoadBlock returns the block with the given height.
+// If no block is found for that height, it returns nil.
+func (bs *stateStore) loadAminoBlock(height int64) *types.Block {
+	var blockMeta = bs.loadAminoBlockMeta(height)
+	if blockMeta == nil {
+		return nil
+	}
+
+	var block = new(types.Block)
+	buf := []byte{}
+	for i := 0; i < int(blockMeta.BlockID.PartSetHeader.Total); i++ {
+		part := bs.loadAminoBlockPart(height, i)
+		buf = append(buf, part.Bytes...)
+	}
+	err := cdc.UnmarshalBinaryLengthPrefixed(buf, block)
+	if err != nil {
+		// NOTE: The existence of meta should imply the existence of the
+		// block. So, make sure meta is only saved after blocks are saved.
+		panic(fmt.Errorf("Error reading block: %w", err))
+	}
+	return block
+}
+
+// LoadBlockMeta returns the BlockMeta for the given height.
+// If no block is found for the given height, it returns nil.
+func (bs *stateStore) loadAminoBlockMeta(height int64) *types.BlockMeta {
+	var blockMeta = new(types.BlockMeta)
+	bz, _ := bs.block.Get(calcBlockMetaKey(height))
+	if len(bz) == 0 {
+		return nil
+	}
+	err := cdc.UnmarshalBinaryBare(bz, blockMeta)
+	if err != nil {
+		panic(fmt.Errorf("Error reading block meta: %w", err))
+	}
+	return blockMeta
+}
+
+// LoadBlockPart returns the Part at the given index
+// from the block at the given height.
+// If no part is found for the given height and index, it returns nil.
+func (bs *stateStore) loadAminoBlockPart(height int64, index int) *types.Part {
+	var part = new(types.Part)
+	bz, _ := bs.block.Get(calcBlockPartKey(height, index))
+	if len(bz) == 0 {
+		return nil
+	}
+	err := cdc.UnmarshalBinaryBare(bz, part)
+	if err != nil {
+		panic(fmt.Errorf("Error reading block part: %w", err))
+	}
+	return part
+}
+
 func (bs *stateStore) loadBlockPart(height int64, index int) *types.Part {
 	var pbpart = new(tmproto.Part)
 
@@ -348,7 +402,6 @@ func (bs *stateStore) loadBlockStoreState() (base int64, height int64) {
 		panic(fmt.Sprintf("Could not unmarshal bytes: %X", bytes))
 	}
 
-	// Backwards compatibility with persisted data from before Base existed.
 	if bsj.Height > 0 && bsj.Base == 0 {
 		bsj.Base = 1
 	}
