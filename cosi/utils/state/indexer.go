@@ -64,9 +64,18 @@ func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, 
 
 	for i := start; i < end; i++ {
 
-		fmt.Println("height", i)
+		var (
+			err error
+			res *tmstate.ABCIResponses
+		)
+
 		// indexing blocks
-		res, err := statedb.getABCIResponses(i, amino)
+		if amino {
+			res, err = statedb.getAminoABCIResponses(i)
+		} else {
+
+			res, err = statedb.getABCIResponses(i)
+		}
 		if err != nil {
 			return fmt.Errorf("i=%d: get abciresponses: %w", i, err)
 		}
@@ -197,13 +206,13 @@ type aBCIResponses struct {
 // LoadABCIResponses loads the ABCIResponses for the given height from the database.
 // This is useful for recovering from crashes where we called app.Commit and before we called
 // s.Save(). It can also be used to produce Merkle proofs of the result of txs.
-func getAminoABCIResponses(db dbm.DB, height int64) (*aBCIResponses, error) {
-	buf, err := db.Get(calcABCIResponsesKey(height))
+func (store stateStore) getAminoABCIResponses(height int64) (*tmstate.ABCIResponses, error) {
+	buf, err := store.state.Get(calcABCIResponsesKey(height))
 	if err != nil {
 		return nil, err
 	}
 	if len(buf) == 0 {
-		return nil, fmt.Errorf("no ABCIResponses for height: %s", height)
+		return nil, fmt.Errorf("no ABCIResponses for height: %d", height)
 	}
 
 	abciResponses := new(aBCIResponses)
@@ -215,7 +224,12 @@ func getAminoABCIResponses(db dbm.DB, height int64) (*aBCIResponses, error) {
 	}
 	// TODO: ensure that buf is completely read.
 
-	return abciResponses, nil
+	res := &tmstate.ABCIResponses{
+		DeliverTxs: abciResponses.DeliverTxs,
+		EndBlock:   abciResponses.EndBlock,
+		BeginBlock: abciResponses.BeginBlock,
+	}
+	return res, nil
 }
 
 func calcABCIResponsesKey(height int64) []byte {

@@ -36,19 +36,6 @@ func init() {
 	// https://github.com/tendermint/go-amino/issues/9
 	// is resolved
 	RegisterAmino(cdc)
-
-	// TODO: Have amino provide a way to go from concrete struct to route directly.
-	// Its currently a private API
-	nameTable[reflect.TypeOf(ed25519.PubKey{})] = Ed25519PubKeyAminoName
-	nameTable[reflect.TypeOf(secp256k1.PubKey{})] = SecpPubKeyAminoName
-}
-
-// PubkeyAminoName returns the amino route of a pubkey
-// cdc is currently passed in, as eventually this will not be using
-// a package level codec.
-func PubkeyAminoName(cdc *amino.Codec, key crypto.PubKey) (string, bool) {
-	route, found := nameTable[reflect.TypeOf(key)]
-	return route, found
 }
 
 // RegisterAmino registers all crypto related types in the given (amino) codec.
@@ -64,22 +51,4 @@ func RegisterAmino(cdc *amino.Codec) {
 		Ed25519PrivKeyAminoName, nil)
 	cdc.RegisterConcrete(secp256k1.PrivKey{},
 		SecpPrivKeyAminoName, nil)
-}
-
-// RegisterKeyType registers an external key type to allow decoding it from bytes
-func RegisterKeyType(o interface{}, name string) {
-	cdc.RegisterConcrete(o, name, nil)
-	nameTable[reflect.TypeOf(o)] = name
-}
-
-// PrivKeyFromBytes unmarshals private key bytes and returns a PrivKey
-func PrivKeyFromBytes(privKeyBytes []byte) (privKey crypto.PrivKey, err error) {
-	err = cdc.UnmarshalBinaryBare(privKeyBytes, &privKey)
-	return
-}
-
-// PubKeyFromBytes unmarshals public key bytes and returns a PubKey
-func PubKeyFromBytes(pubKeyBytes []byte) (pubKey crypto.PubKey, err error) {
-	err = cdc.UnmarshalBinaryBare(pubKeyBytes, &pubKey)
-	return
 }
