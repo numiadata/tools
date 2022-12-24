@@ -9,11 +9,14 @@ To use this package, first there must be a fork of tendermint that imports it. O
 To do this:
 
 ```bash
-# clone the fork of tendermint
-$ git clone https://github.com/numiadata/tendermint.git
+# clone the fork of tendermint at the root level 
+$ git clone https://github.com/numiadata/tendermint.git -b v0.34.x
+
+# cd into application directory
+cd [application]
 
 # Remove a replace directive.
-$ go mod edit -dropreplace google.golang.org/grpc@v1.33.2
+$ go mod edit -dropreplace google.golang.org/grpc
 
 # Add a replace directive using the fork of tendermint
 $ go mod edit -replace github.com/tendermint/tendermint=../tendermint
