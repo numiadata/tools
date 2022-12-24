@@ -12,6 +12,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmstore "github.com/tendermint/tendermint/proto/tendermint/store"
@@ -27,7 +28,7 @@ import (
 var count uint64
 
 // The state package defines indexing the state.db
-func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, end int64, unsafe bool) error {
+func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, end int64, unsafe, amino bool) error {
 
 	statedb, err := newStateStore(path)
 	if err != nil {
@@ -65,7 +66,7 @@ func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, 
 
 		fmt.Println("height", i)
 		// indexing blocks
-		res, err := statedb.getABCIResponses(i)
+		res, err := statedb.getABCIResponses(i, amino)
 		if err != nil {
 			return fmt.Errorf("i=%d: get abciresponses: %w", i, err)
 		}
@@ -177,6 +178,36 @@ func (store stateStore) getABCIResponses(height int64) (*tmstate.ABCIResponses, 
 
 	abciResponses := new(tmstate.ABCIResponses)
 	err = abciResponses.Unmarshal(buf)
+	if err != nil {
+		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
+		tmos.Exit(fmt.Sprintf(`LoadABCIResponses: Data has been corrupted or its spec has
+                changed: %v\n`, err))
+	}
+	// TODO: ensure that buf is completely read.
+
+	return abciResponses, nil
+}
+
+type aBCIResponses struct {
+	DeliverTxs []*abci.ResponseDeliverTx `json:"deliver_txs"`
+	EndBlock   *abci.ResponseEndBlock    `json:"end_block"`
+	BeginBlock *abci.ResponseBeginBlock  `json:"begin_block"`
+}
+
+// LoadABCIResponses loads the ABCIResponses for the given height from the database.
+// This is useful for recovering from crashes where we called app.Commit and before we called
+// s.Save(). It can also be used to produce Merkle proofs of the result of txs.
+func getAminoABCIResponses(db dbm.DB, height int64) (*aBCIResponses, error) {
+	buf, err := db.Get(calcABCIResponsesKey(height))
+	if err != nil {
+		return nil, err
+	}
+	if len(buf) == 0 {
+		return nil, fmt.Errorf("no ABCIResponses for height: %s", height)
+	}
+
+	abciResponses := new(aBCIResponses)
+	err = cdc.UnmarshalBinaryBare(buf, abciResponses)
 	if err != nil {
 		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
 		tmos.Exit(fmt.Sprintf(`LoadABCIResponses: Data has been corrupted or its spec has
