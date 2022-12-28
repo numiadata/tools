@@ -11,6 +11,7 @@ var (
 	blocks  uint64
 	appName = "cosi"
 	unsafe  bool
+	amino   bool // decode amino data
 )
 
 // NewRootCmd returns the root command for relayer.
