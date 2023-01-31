@@ -58,14 +58,14 @@ type Batch struct {
 }
 
 // NewBatch creates a new Batch.
-func NewBatch(n int64) *pubsub.Batch {
-	return &pubsub.Batch{
-		Ops: make([]*pubsub.TxResult, n),
+func NewBatch(n int64) *Batch {
+	return &Batch{
+		Ops: make([]*TxResult, n),
 	}
 }
 
 // Add or update an entry for the given result.Index.
-func (b *Batch) Add(result *pubsub.TxResult) error {
+func (b *Batch) Add(result *TxResult) error {
 	b.Ops[result.Index] = result
 	return nil
 }
