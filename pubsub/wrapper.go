@@ -43,10 +43,6 @@ func (ti *TxIndexer) AddBatch(batch *Batch) error {
 	return ti.sink.IndexTxs(ops, false)
 }
 
-type Batch struct {
-	Ops []*TxResult
-}
-
 func (ti *TxIndexer) Index(txr *TxResult) error {
 	op := &TxResult{Tx: txr.Tx, Height: txr.Height, Index: txr.Index, Result: txr.Result} // TODO: missing timestamp
 
@@ -55,4 +51,26 @@ func (ti *TxIndexer) Index(txr *TxResult) error {
 
 func (ti *TxIndexer) Get(hash []byte) (*TxResult, error) {
 	return nil, errors.New("the Get method is not supported for the Pubsub indexer")
+}
+
+type Batch struct {
+	Ops []*TxResult
+}
+
+// NewBatch creates a new Batch.
+func NewBatch(n int64) *pubsub.Batch {
+	return &pubsub.Batch{
+		Ops: make([]*pubsub.TxResult, n),
+	}
+}
+
+// Add or update an entry for the given result.Index.
+func (b *Batch) Add(result *pubsub.TxResult) error {
+	b.Ops[result.Index] = result
+	return nil
+}
+
+// Size returns the total number of operations inside the batch.
+func (b *Batch) Size() int {
+	return len(b.Ops)
 }
