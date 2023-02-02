@@ -37,14 +37,14 @@ func NewTxIndexer(sink *EventSink) *TxIndexer {
 func (ti *TxIndexer) AddBatch(batch *Batch) error {
 	ops := make([]*TxResult, len(batch.Ops))
 	for i, tx := range batch.Ops {
-		ops[i] = &TxResult{Tx: tx.Tx, Height: tx.Height, Index: tx.Index, Result: tx.Result} // TODO: missing timestamp
+		ops[i] = &TxResult{Tx: tx.Tx, Height: tx.Height, Index: tx.Index, Result: tx.Result, Time: tx.Time}
 	}
 
 	return ti.sink.IndexTxs(ops, false)
 }
 
 func (ti *TxIndexer) Index(txr *TxResult) error {
-	op := &TxResult{Tx: txr.Tx, Height: txr.Height, Index: txr.Index, Result: txr.Result} // TODO: missing timestamp
+	op := &TxResult{Tx: txr.Tx, Height: txr.Height, Index: txr.Index, Result: txr.Result, Time: txr.Time}
 
 	return ti.sink.IndexTxs([]*TxResult{op}, false)
 }
