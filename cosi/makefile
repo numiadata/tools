@@ -1,9 +1,4 @@
-
-
-
 all: install
-
-
 
 build:
 	@echo "Building Cosi"
@@ -16,4 +11,4 @@ install:
 clean:
 	rm -rf build
 
-.PHONY: all lint test race msan tools clean build
+.PHONY: all isntall clean build

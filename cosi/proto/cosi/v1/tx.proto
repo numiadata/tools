@@ -9,9 +9,9 @@ import "gogoproto/gogo.proto";
 import "tendermint/abci/types.proto";
 
 message TxResult {
-  int64                             height = 1;
-  uint32                            index  = 2;
-  bytes                             tx     = 3;
-  tendermint.abci.ResponseDeliverTx result = 4 [(gogoproto.nullable) = false];
-  google.protobuf.Timestamp         time   = 5 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+  int64                             height          = 1;
+  uint32                            index           = 2;
+  bytes                             tx              = 3;
+  tendermint.abci.ResponseDeliverTx result          = 4 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp         block_timestamp = 5 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 }

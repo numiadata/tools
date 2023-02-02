@@ -88,11 +88,11 @@ func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, 
 
 			for i := range b.Data.Txs {
 				tr := &pubsub.TxResult{
-					Height: b.Height,
-					Index:  uint32(i),
-					Tx:     b.Data.Txs[i],
-					Result: *(res.DeliverTxs[i]),
-					Time:   b.Time,
+					Height:         b.Height,
+					Index:          uint32(i),
+					Tx:             b.Data.Txs[i],
+					Result:         *(res.DeliverTxs[i]),
+					BlockTimestamp: b.Time,
 				}
 				batch = append(batch, tr)
 
