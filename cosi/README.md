@@ -1,15 +1,14 @@
 # Cosi
 
-Cosi is a cosmos reindexer. It is built to work with many dbs and in the future RPCs. 
-
+Cosi is a cosmos reindexer. It is built to work with many dbs and in the future RPCs.
 
 ## How to use cosi
 
 ```bash
-PROJECT_ID=[project_id] TOPIC=[topic] CHAIN_ID=[chainID] GOOGLE_APPLICATION_CREDENTIALS=[path_to_key] cosi state [state_height] [end_height] [path_to_db]
+PROJECT_ID=[project_id] TOPIC=[topic] CHAIN_ID=[chainID] GOOGLE_APPLICATION_CREDENTIALS=[path_to_key] cosi state [state_height] [end_height] [path_to_db] [database_backend (goleveldb or pebbledb)]
 ```
 
-There are other commands that can be used with cosi as well. 
+There are other commands that can be used with cosi as well.
 
 ```bash
 Usage:

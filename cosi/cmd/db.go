@@ -78,7 +78,7 @@ func kvCmd() *cobra.Command {
 // add flags for block events only
 func stateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "state [start_height] [end_height] [path_to_db]",
+		Use:   "state [start_height] [end_height] [path_to_db] [database_backend (goleveldb or pebbledb)]",
 		Short: "reindex via the state db from a start height to an end height, note this only works for txs currently",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -116,7 +116,7 @@ func stateCmd() *cobra.Command {
 			}
 
 			// loop through specified heights and index
-			return state.Index(ctx, consumer, args[2], start, end, unsafe)
+			return state.Index(ctx, consumer, args[2], args[3], start, end, unsafe)
 		},
 	}
 	return cmd

@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	cosdb "github.com/cosmos/cosmos-db"
 	"github.com/gogo/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
@@ -27,9 +28,9 @@ import (
 var count uint64
 
 // The state package defines indexing the state.db
-func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, end int64, unsafe bool) error {
+func Index(ctx context.Context, consumer *pubsub.EventSink, path, db string, start, end int64, unsafe bool) error {
 
-	statedb, err := newStateStore(path)
+	statedb, err := newStateStore(path, db)
 	if err != nil {
 		return fmt.Errorf("new stateStore: %w", err)
 	}
@@ -108,7 +109,7 @@ func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, 
 }
 
 func GetBaseHeight(path string) (int64, int64, error) {
-	statedb, err := newStateStore(path)
+	statedb, err := newStateStore(path, "goleveldb")
 	if err != nil {
 		return 0, 0, fmt.Errorf("new stateStore: %w", err)
 	}
@@ -142,19 +143,41 @@ func ForceCompact(path string) error {
 }
 
 type stateStore struct {
-	state dbm.DB
-	block dbm.DB
+	state cosdb.DB
+	block cosdb.DB
 }
 
-func newStateStore(path string) (*stateStore, error) {
-	state, err := dbm.NewGoLevelDBWithOpts("state", path, &opt.Options{ReadOnly: true})
-	if err != nil {
-		return nil, err
-	}
+func newStateStore(path string, db string) (*stateStore, error) {
+	var (
+		state cosdb.DB
+		block cosdb.DB
+	)
+	if db == "goleveldb" {
+		st, err := cosdb.NewGoLevelDBWithOpts("state", path, &opt.Options{ReadOnly: true})
+		if err != nil {
+			return nil, err
+		}
 
-	block, err := dbm.NewGoLevelDBWithOpts("blockstore", path, &opt.Options{ReadOnly: true})
-	if err != nil {
-		return nil, err
+		bl, err := cosdb.NewGoLevelDBWithOpts("blockstore", path, &opt.Options{ReadOnly: true})
+		if err != nil {
+			return nil, err
+		}
+
+		state = st
+		block = bl
+	} else if db == "pebbledb" {
+		st, err := cosdb.NewDB("state", cosdb.PebbleDBBackend, path)
+		if err != nil {
+			return nil, err
+		}
+
+		bl, err := cosdb.NewDB("blockstore", cosdb.PebbleDBBackend, path)
+		if err != nil {
+			return nil, err
+		}
+
+		state = st
+		block = bl
 	}
 
 	return &stateStore{
