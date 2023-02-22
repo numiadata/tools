@@ -129,12 +129,16 @@ func stateCmd() *cobra.Command {
 
 func baseHeightCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "base [path_to_db]",
+		Use:   "base [path_to_db] [database_backend (goleveldb or pebbledb)]",
 		Short: "Get the base and highest height of the db",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			base, height, err := state.GetBaseHeight(args[0])
+			db := args[1]
+			if db == "" {
+				db = "goleveldb"
+			}
+			base, height, err := state.GetBaseHeight(args[0], db)
 			if err != nil {
 				return err
 			}

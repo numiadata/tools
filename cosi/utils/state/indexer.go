@@ -108,8 +108,8 @@ func Index(ctx context.Context, consumer *pubsub.EventSink, path, db string, sta
 	return nil
 }
 
-func GetBaseHeight(path string) (int64, int64, error) {
-	statedb, err := newStateStore(path, "goleveldb")
+func GetBaseHeight(path, db string) (int64, int64, error) {
+	statedb, err := newStateStore(path, db)
 	if err != nil {
 		return 0, 0, fmt.Errorf("new stateStore: %w", err)
 	}
@@ -152,6 +152,8 @@ func newStateStore(path string, db string) (*stateStore, error) {
 		state cosdb.DB
 		block cosdb.DB
 	)
+
+	fmt.Println(db)
 	if db == "goleveldb" {
 		st, err := cosdb.NewGoLevelDBWithOpts("state", path, &opt.Options{ReadOnly: true})
 		if err != nil {
@@ -166,6 +168,7 @@ func newStateStore(path string, db string) (*stateStore, error) {
 		state = st
 		block = bl
 	} else if db == "pebbledb" {
+		fmt.Println(1)
 		st, err := cosdb.NewDB("state", cosdb.PebbleDBBackend, path)
 		if err != nil {
 			return nil, err
