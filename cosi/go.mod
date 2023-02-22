@@ -7,7 +7,7 @@ require (
 	github.com/cosmos/gogoproto v1.4.3
 	github.com/gogo/protobuf v1.3.2
 	github.com/google/orderedcode v0.0.1
-	github.com/numiadata/tools/pubsub v0.0.0-00010101000000-000000000000
+	github.com/numiadata/tools/pubsub v0.3.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.13.0
 	github.com/syndtr/goleveldb v1.0.1-0.20200815110645-5c35d600f0ca
@@ -100,5 +100,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/numiadata/tools/pubsub => ../pubsub
