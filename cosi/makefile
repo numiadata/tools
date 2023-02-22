@@ -2,11 +2,11 @@ all: install
 
 build:
 	@echo "Building Cosi"
-	@go build -mod readonly $(BUILD_FLAGS) -o build/cosi main.go -tags=pebbledb
+	@go build  -tags=pebbledb -mod readonly $(BUILD_FLAGS) -o build/cosi main.go -tags=pebbledb
 
 install:
 	@echo "Installing Cosi"
-	@go install -mod readonly ./... -tags=pebbledb
+	@go install -tags=pebbledb -mod readonly ./... 
 
 clean:
 	rm -rf build
