@@ -80,7 +80,7 @@ func stateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "state [start_height] [end_height] [path_to_db] [database_backend (goleveldb or pebbledb)]",
 		Short: "reindex via the state db from a start height to an end height, note this only works for txs currently",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.RangeArgs(3, 4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			ctx := cmd.Context()
@@ -115,8 +115,13 @@ func stateCmd() *cobra.Command {
 				return err
 			}
 
+			db := args[3]
+			if db == "" {
+				db = "goleveldb"
+			}
+
 			// loop through specified heights and index
-			return state.Index(ctx, consumer, args[2], args[3], start, end, unsafe)
+			return state.Index(ctx, consumer, args[2], db, start, end, unsafe)
 		},
 	}
 	return cmd
