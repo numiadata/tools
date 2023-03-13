@@ -153,7 +153,6 @@ func newStateStore(path string, db string) (*stateStore, error) {
 		block cosdb.DB
 	)
 
-	fmt.Println(db)
 	if db == "goleveldb" {
 		st, err := cosdb.NewGoLevelDBWithOpts("state", path, &opt.Options{ReadOnly: true})
 		if err != nil {

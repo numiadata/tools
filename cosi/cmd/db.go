@@ -78,9 +78,9 @@ func kvCmd() *cobra.Command {
 // add flags for block events only
 func stateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "state [start_height] [end_height] [path_to_db] [database_backend (goleveldb or pebbledb)]",
+		Use:   "state [start_height] [end_height] [path_to_db]",
 		Short: "reindex via the state db from a start height to an end height, note this only works for txs currently",
-		Args:  cobra.RangeArgs(3, 4),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			ctx := cmd.Context()
@@ -115,29 +115,31 @@ func stateCmd() *cobra.Command {
 				return err
 			}
 
-			db := args[3]
-			if db == "" {
-				db = "goleveldb"
+			db, err := cmd.Flags().GetString("db")
+			if err != nil {
+				return err
 			}
 
 			// loop through specified heights and index
 			return state.Index(ctx, consumer, args[2], db, start, end, unsafe)
 		},
 	}
+
+	cmd.PersistentFlags().String("db", "goleveldb", "(goleveldb or pebbledb)")
 	return cmd
 }
 
 func baseHeightCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "base [path_to_db] [database_backend (goleveldb or pebbledb)]",
+		Use:   "base [path_to_db]",
 		Short: "Get the base and highest height of the db",
-		Args:  cobra.RangeArgs(1, 2),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-
-			db := args[1]
-			if db == "" {
-				db = "goleveldb"
+			db, err := cmd.Flags().GetString("db")
+			if err != nil {
+				return err
 			}
+
 			base, height, err := state.GetBaseHeight(args[0], db)
 			if err != nil {
 				return err
@@ -149,6 +151,8 @@ func baseHeightCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.PersistentFlags().String("db", "goleveldb", "(goleveldb or pebbledb)")
 	return cmd
 }
 
