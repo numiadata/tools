@@ -167,7 +167,6 @@ func newStateStore(path string, db string) (*stateStore, error) {
 		state = st
 		block = bl
 	} else if db == "pebbledb" {
-		fmt.Println(1)
 		st, err := cosdb.NewDB("state", cosdb.PebbleDBBackend, path)
 		if err != nil {
 			return nil, err
@@ -190,7 +189,6 @@ func newStateStore(path string, db string) (*stateStore, error) {
 
 // GetABCIResponses returns the ABCIResponses for the given height.
 func (store stateStore) getABCIResponses(height int64) (*tmstate.ABCIResponses, error) {
-	fmt.Println(height)
 	buf, err := store.state.Get(calcABCIResponsesKey(height))
 	if err != nil {
 		return nil, err
@@ -213,7 +211,6 @@ func (store stateStore) getABCIResponses(height int64) (*tmstate.ABCIResponses, 
 }
 
 func calcABCIResponsesKey(height int64) []byte {
-	fmt.Println(height)
 	return []byte(fmt.Sprintf("abciResponsesKey:%v", height))
 }
 
