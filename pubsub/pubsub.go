@@ -20,6 +20,7 @@ const (
 	AttrKeyChainID     = "chain_id"
 	AttrKeyBlockHeight = "block_height"
 	AttrKeyTxHash      = "tx_hash"
+	AttrKeyTxCount     = "tx_count"
 
 	MsgType            = "message_type"
 	MsgTypeBeginBlock  = "begin_block"
@@ -27,6 +28,7 @@ const (
 	MsgTypeEndBlock    = "end_block"
 	MsgTypeTxResult    = "tx_result"
 	MsgTypeTxEvents    = "tx_events"
+	MsgTypeTxCount     = "tx_count"
 )
 
 var jsonpbMarshaller = jsonpb.Marshaler{
@@ -151,6 +153,20 @@ func (es *EventSink) IndexBlock(h types.EventDataNewBlockHeader, unsafe bool) er
 			},
 		},
 	)
+	results = append(results, res)
+
+	res = es.topic.Publish(
+		context.Background(), // NOTE: contexts aren't used in Publish
+		&pubsub.Message{
+			Attributes: map[string]string{
+				MsgType:            MsgTypeTxCount,
+				AttrKeyChainID:     es.chainID,
+				AttrKeyBlockHeight: blockHeightStr,
+				AttrKeyTxCount:     strconv.Itoa(int(h.NumTxs)),
+			},
+		},
+	)
+
 	results = append(results, res)
 
 	if !unsafe {
