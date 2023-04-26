@@ -12,6 +12,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmstore "github.com/tendermint/tendermint/proto/tendermint/store"
@@ -27,7 +28,7 @@ import (
 var count uint64
 
 // The state package defines indexing the state.db
-func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, end int64, unsafe bool) error {
+func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, end int64, unsafe, amino bool) error {
 
 	statedb, err := newStateStore(path)
 	if err != nil {
@@ -63,9 +64,18 @@ func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, 
 
 	for i := start; i < end; i++ {
 
-		fmt.Println("height", i)
+		var (
+			err error
+			res *tmstate.ABCIResponses
+		)
+
 		// indexing blocks
-		res, err := statedb.getABCIResponses(i)
+		if amino {
+			res, err = statedb.getAminoABCIResponses(i)
+		} else {
+
+			res, err = statedb.getABCIResponses(i)
+		}
 		if err != nil {
 			return fmt.Errorf("i=%d: get abciresponses: %w", i, err)
 		}
@@ -187,6 +197,41 @@ func (store stateStore) getABCIResponses(height int64) (*tmstate.ABCIResponses, 
 	return abciResponses, nil
 }
 
+type aBCIResponses struct {
+	DeliverTxs []*abci.ResponseDeliverTx `json:"deliver_txs"`
+	EndBlock   *abci.ResponseEndBlock    `json:"end_block"`
+	BeginBlock *abci.ResponseBeginBlock  `json:"begin_block"`
+}
+
+// LoadABCIResponses loads the ABCIResponses for the given height from the database.
+// This is useful for recovering from crashes where we called app.Commit and before we called
+// s.Save(). It can also be used to produce Merkle proofs of the result of txs.
+func (store stateStore) getAminoABCIResponses(height int64) (*tmstate.ABCIResponses, error) {
+	buf, err := store.state.Get(calcABCIResponsesKey(height))
+	if err != nil {
+		return nil, err
+	}
+	if len(buf) == 0 {
+		return nil, fmt.Errorf("no ABCIResponses for height: %d", height)
+	}
+
+	abciResponses := new(aBCIResponses)
+	err = cdc.UnmarshalBinaryBare(buf, abciResponses)
+	if err != nil {
+		// DATA HAS BEEN CORRUPTED OR THE SPEC HAS CHANGED
+		tmos.Exit(fmt.Sprintf(`LoadABCIResponses: Data has been corrupted or its spec has
+                changed: %v\n`, err))
+	}
+	// TODO: ensure that buf is completely read.
+
+	res := &tmstate.ABCIResponses{
+		DeliverTxs: abciResponses.DeliverTxs,
+		EndBlock:   abciResponses.EndBlock,
+		BeginBlock: abciResponses.BeginBlock,
+	}
+	return res, nil
+}
+
 func calcABCIResponsesKey(height int64) []byte {
 	return []byte(fmt.Sprintf("abciResponsesKey:%v", height))
 }
@@ -257,6 +302,60 @@ func (bs *stateStore) loadBlock(height int64) *types.Block {
 	return block
 }
 
+// LoadBlock returns the block with the given height.
+// If no block is found for that height, it returns nil.
+func (bs *stateStore) loadAminoBlock(height int64) *types.Block {
+	var blockMeta = bs.loadAminoBlockMeta(height)
+	if blockMeta == nil {
+		return nil
+	}
+
+	var block = new(types.Block)
+	buf := []byte{}
+	for i := 0; i < int(blockMeta.BlockID.PartSetHeader.Total); i++ {
+		part := bs.loadAminoBlockPart(height, i)
+		buf = append(buf, part.Bytes...)
+	}
+	err := cdc.UnmarshalBinaryLengthPrefixed(buf, block)
+	if err != nil {
+		// NOTE: The existence of meta should imply the existence of the
+		// block. So, make sure meta is only saved after blocks are saved.
+		panic(fmt.Errorf("Error reading block: %w", err))
+	}
+	return block
+}
+
+// LoadBlockMeta returns the BlockMeta for the given height.
+// If no block is found for the given height, it returns nil.
+func (bs *stateStore) loadAminoBlockMeta(height int64) *types.BlockMeta {
+	var blockMeta = new(types.BlockMeta)
+	bz, _ := bs.block.Get(calcBlockMetaKey(height))
+	if len(bz) == 0 {
+		return nil
+	}
+	err := cdc.UnmarshalBinaryBare(bz, blockMeta)
+	if err != nil {
+		panic(fmt.Errorf("Error reading block meta: %w", err))
+	}
+	return blockMeta
+}
+
+// LoadBlockPart returns the Part at the given index
+// from the block at the given height.
+// If no part is found for the given height and index, it returns nil.
+func (bs *stateStore) loadAminoBlockPart(height int64, index int) *types.Part {
+	var part = new(types.Part)
+	bz, _ := bs.block.Get(calcBlockPartKey(height, index))
+	if len(bz) == 0 {
+		return nil
+	}
+	err := cdc.UnmarshalBinaryBare(bz, part)
+	if err != nil {
+		panic(fmt.Errorf("Error reading block part: %w", err))
+	}
+	return part
+}
+
 func (bs *stateStore) loadBlockPart(height int64, index int) *types.Part {
 	var pbpart = new(tmproto.Part)
 
@@ -303,7 +402,6 @@ func (bs *stateStore) loadBlockStoreState() (base int64, height int64) {
 		panic(fmt.Sprintf("Could not unmarshal bytes: %X", bytes))
 	}
 
-	// Backwards compatibility with persisted data from before Base existed.
 	if bsj.Height > 0 && bsj.Base == 0 {
 		bsj.Base = 1
 	}

@@ -116,7 +116,7 @@ func stateCmd() *cobra.Command {
 			}
 
 			// loop through specified heights and index
-			return state.Index(ctx, consumer, args[2], start, end, unsafe)
+			return state.Index(ctx, consumer, args[2], start, end, unsafe, amino)
 		},
 	}
 	return cmd
