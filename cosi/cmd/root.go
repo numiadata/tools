@@ -43,6 +43,7 @@ func NewRootCmd() *cobra.Command {
 		stateCmd(),
 		baseHeightCmd(),
 		compactStateCmd(),
+		txCountCmd(),
 	)
 
 	return rootCmd

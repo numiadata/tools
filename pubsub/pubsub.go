@@ -20,6 +20,7 @@ const (
 	AttrKeyChainID     = "chain_id"
 	AttrKeyBlockHeight = "block_height"
 	AttrKeyTxHash      = "tx_hash"
+	AttrKeyTxCount     = "tx_count"
 
 	MsgType            = "message_type"
 	MsgTypeBeginBlock  = "begin_block"
@@ -27,6 +28,7 @@ const (
 	MsgTypeEndBlock    = "end_block"
 	MsgTypeTxResult    = "tx_result"
 	MsgTypeTxEvents    = "tx_events"
+	MsgTypeTxCount     = "tx_count"
 )
 
 var jsonpbMarshaller = jsonpb.Marshaler{
@@ -151,6 +153,57 @@ func (es *EventSink) IndexBlock(h types.EventDataNewBlockHeader, unsafe bool) er
 			},
 		},
 	)
+	results = append(results, res)
+
+	res = es.topic.Publish(
+		context.Background(), // NOTE: contexts aren't used in Publish
+		&pubsub.Message{
+			Attributes: map[string]string{
+				MsgType:            MsgTypeTxCount,
+				AttrKeyChainID:     es.chainID,
+				AttrKeyBlockHeight: blockHeightStr,
+				AttrKeyTxCount:     strconv.Itoa(int(h.NumTxs)),
+			},
+		},
+	)
+
+	results = append(results, res)
+
+	if !unsafe {
+		fmt.Println("safe")
+		// wait for all messages to be be sent (or failed to be sent) to the server
+		for _, r := range results {
+			if _, err := r.Get(context.Background()); err != nil {
+				return fmt.Errorf("failed to publish pubsub message: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+func (es *EventSink) IndexBlockTxsCount(h types.EventDataNewBlockHeader, unsafe bool) error {
+	buf := new(bytes.Buffer)
+	blockHeightStr := strconv.Itoa(int(h.Header.Height))
+
+	var results []*pubsub.PublishResult
+
+	// publish block header
+	if err := jsonpbMarshaller.Marshal(buf, h.Header.ToProto()); err != nil {
+		return fmt.Errorf("failed to JSON marshal Header: %w", err)
+	}
+
+	res := es.topic.Publish(
+		context.Background(), // NOTE: contexts aren't used in Publish
+		&pubsub.Message{
+			Attributes: map[string]string{
+				MsgType:            MsgTypeTxCount,
+				AttrKeyChainID:     es.chainID,
+				AttrKeyBlockHeight: blockHeightStr,
+				AttrKeyTxCount:     strconv.Itoa(int(h.NumTxs)),
+			},
+		},
+	)
+
 	results = append(results, res)
 
 	if !unsafe {

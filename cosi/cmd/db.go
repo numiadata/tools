@@ -20,11 +20,7 @@ const (
 	chainIDEnvVar   = "CHAIN_ID"
 )
 
-// this command is used for reinstalling the events using a local db
-// load db
-// load app store and prune
-// if immutable tree is not deletable we should import and export current state
-// add flags for block events only
+// kvCmd is used for ingesting the events using a local txindex db
 func kvCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "kv [start_height] [end_height] [path_to_db]",
@@ -71,11 +67,7 @@ func kvCmd() *cobra.Command {
 	return cmd
 }
 
-// this command is used for reinstalling the events using a local db
-// load db
-// load app store and prune
-// if immutable tree is not deletable we should import and export current state
-// add flags for block events only
+// stateCmd is used for ingesting the events using a local db
 func stateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "state [start_height] [end_height] [path_to_db]",
@@ -117,6 +109,53 @@ func stateCmd() *cobra.Command {
 
 			// loop through specified heights and index
 			return state.Index(ctx, consumer, args[2], start, end, unsafe)
+		},
+	}
+	return cmd
+}
+
+// txCountCmd is used to count the number of txs in a block in a range of heights
+func txCountCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "tx-count [start_height] [end_height] [path_to_db]",
+		Short: "reindex via the state db from a start height to an end height, note this only works for txs currently",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			ctx := cmd.Context()
+
+			start, err := strconv.ParseInt(args[0], 10, 0)
+			if err != nil {
+				return err
+			}
+
+			end, err := strconv.ParseInt(args[1], 10, 0)
+			if err != nil {
+				return err
+			}
+
+			projectID := os.Getenv(projectIDEnvVar)
+			if len(projectID) == 0 {
+				return fmt.Errorf("missing '%s' environment variable", projectIDEnvVar)
+			}
+
+			topic := os.Getenv(topicEnvVar)
+			if len(topic) == 0 {
+				return fmt.Errorf("missing '%s' environment variable", topicEnvVar)
+			}
+
+			chainID := os.Getenv(chainIDEnvVar)
+			if len(chainID) == 0 {
+				return fmt.Errorf("missing '%s' environment variable", chainIDEnvVar)
+			}
+
+			consumer, err := pubsub.NewEventSink(projectID, topic, chainID)
+			if err != nil {
+				return err
+			}
+
+			// loop through specified heights and index
+			return state.IndexTxCount(ctx, consumer, args[2], start, end, unsafe)
 		},
 	}
 	return cmd

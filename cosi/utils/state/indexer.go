@@ -107,6 +107,67 @@ func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, 
 	return nil
 }
 
+// The state package defines indexing the state.db
+func IndexTxCount(ctx context.Context, consumer *pubsub.EventSink, path string, start, end int64, unsafe bool) error {
+
+	statedb, err := newStateStore(path)
+	if err != nil {
+		return fmt.Errorf("new stateStore: %w", err)
+	}
+
+	var wg sync.WaitGroup
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer func() {
+		cancel()
+		wg.Wait()
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		begin := time.Now()
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				delta := time.Since(begin)
+				count := atomic.LoadUint64(&count)
+				rate := float64(count) / float64(delta.Seconds())
+				log.Printf("+%ds count=%d rate=%.3f/s", int(delta.Seconds()), count, rate)
+			}
+		}
+	}()
+
+	for i := start; i < end; i++ {
+
+		fmt.Println("height", i)
+		// indexing blocks
+		res, err := statedb.getABCIResponses(i)
+		if err != nil {
+			return fmt.Errorf("i=%d: get abciresponses: %w", i, err)
+		}
+
+		b := statedb.loadBlock(i)
+
+		e := tmtypes.EventDataNewBlockHeader{
+			ResultBeginBlock: *res.BeginBlock,
+			ResultEndBlock:   *res.EndBlock,
+			Header:           b.Header,
+			NumTxs:           int64(len(b.Data.Txs)),
+		}
+
+		consumer.IndexBlockTxsCount(e, true)
+
+		atomic.AddUint64(&count, 1)
+	}
+
+	return nil
+}
+
 func GetBaseHeight(path string) (int64, int64, error) {
 	statedb, err := newStateStore(path)
 	if err != nil {
