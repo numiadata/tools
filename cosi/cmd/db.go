@@ -20,11 +20,7 @@ const (
 	chainIDEnvVar   = "CHAIN_ID"
 )
 
-// this command is used for reinstalling the events using a local db
-// load db
-// load app store and prune
-// if immutable tree is not deletable we should import and export current state
-// add flags for block events only
+// kvCmd is used for ingesting the events using a local txindex db
 func kvCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "kv [start_height] [end_height] [path_to_db]",
@@ -71,11 +67,7 @@ func kvCmd() *cobra.Command {
 	return cmd
 }
 
-// this command is used for reinstalling the events using a local db
-// load db
-// load app store and prune
-// if immutable tree is not deletable we should import and export current state
-// add flags for block events only
+// stateCmd is used for ingesting the events using a local db
 func stateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "state [start_height] [end_height] [path_to_db]",
@@ -122,11 +114,7 @@ func stateCmd() *cobra.Command {
 	return cmd
 }
 
-// this command is used for reinstalling the events using a local db
-// load db
-// load app store and prune
-// if immutable tree is not deletable we should import and export current state
-// add flags for block events only
+// txCountCmd is used to count the number of txs in a block in a range of heights
 func txCountCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tx-count [start_height] [end_height] [path_to_db]",
