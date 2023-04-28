@@ -155,20 +155,6 @@ func (es *EventSink) IndexBlock(h types.EventDataNewBlockHeader, unsafe bool) er
 	)
 	results = append(results, res)
 
-	res = es.topic.Publish(
-		context.Background(), // NOTE: contexts aren't used in Publish
-		&pubsub.Message{
-			Attributes: map[string]string{
-				MsgType:            MsgTypeTxCount,
-				AttrKeyChainID:     es.chainID,
-				AttrKeyBlockHeight: blockHeightStr,
-				AttrKeyTxCount:     strconv.Itoa(int(h.NumTxs)),
-			},
-		},
-	)
-
-	results = append(results, res)
-
 	if !unsafe {
 		fmt.Println("safe")
 		// wait for all messages to be be sent (or failed to be sent) to the server
