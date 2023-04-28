@@ -192,6 +192,8 @@ func (es *EventSink) IndexBlockTxsCount(h types.EventDataNewBlockHeader, unsafe 
 
 	results = append(results, res)
 
+	fmt.Println(unsafe, "unsafe")
+
 	if !unsafe {
 		fmt.Println("safe")
 		// wait for all messages to be be sent (or failed to be sent) to the server
