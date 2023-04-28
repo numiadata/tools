@@ -98,7 +98,7 @@ func Index(ctx context.Context, consumer *pubsub.EventSink, path string, start, 
 
 			}
 
-			consumer.IndexTxs(batch, true)
+			consumer.IndexTxs(batch, unsafe)
 		}
 
 		atomic.AddUint64(&count, 1)
@@ -160,7 +160,7 @@ func IndexTxCount(ctx context.Context, consumer *pubsub.EventSink, path string, 
 			NumTxs:           int64(len(b.Data.Txs)),
 		}
 
-		consumer.IndexBlockTxsCount(e, true)
+		consumer.IndexBlockTxsCount(e, unsafe)
 
 		atomic.AddUint64(&count, 1)
 	}
