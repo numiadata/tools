@@ -46,6 +46,11 @@ func NewRootCmd() *cobra.Command {
 		txCountCmd(),
 	)
 
+	changeSetCmd := ChangeSetCmd()
+	if changeSetCmd != nil {
+		rootCmd.AddCommand(changeSetCmd)
+	}
+
 	return rootCmd
 }
 

@@ -3,9 +3,8 @@ package cmd
 import (
 	"context"
 
-	"github.com/neilotoole/errgroup"
+	"github.com/cometbft/cometbft/rpc/client/http"
 	"github.com/spf13/cobra"
-	"github.com/tendermint/tendermint/rpc/client/http"
 )
 
 // load db
@@ -19,9 +18,6 @@ func rpcCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			ctx := cmd.Context()
-			errs, _ := errgroup.WithContext(ctx)
-
 			// start, err := strconv.ParseInt(args[0], 10, 0)
 			// if err != nil {
 			// 	return err
@@ -33,7 +29,7 @@ func rpcCmd() *cobra.Command {
 			// }
 
 			// reindexBlock(ctx, start, end, args[2])
-			return errs.Wait()
+			return nil
 		},
 	}
 	return cmd
