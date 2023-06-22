@@ -14,7 +14,6 @@ import (
 )
 
 func ChangeSetCmd() *cobra.Command {
-	return versiondbclient.ChangeSetGroupCmd()
 	// keys, _, _ := app.StoreKeys()
 
 	// add a flag for certain chains to allow users to index changesets

@@ -119,7 +119,7 @@ func NewRocksdbOptions(opts *grocksdb.Options, sstFileWriter bool) *grocksdb.Opt
 	// heavier compression option at bottommost level,
 	// 110k dict bytes is default in zstd library,
 	// train bytes is recommended to be set at 100x dict bytes.
-	opts.SetBottommostCompression(grocksdb.ZSTDCompression)
+	opts.SetBottommostCompression(grocksdb.CompressionType(grocksdb.ZSTDCompression))
 	compressOpts := grocksdb.NewDefaultCompressionOptions()
 	compressOpts.Level = 12
 	if !sstFileWriter {
