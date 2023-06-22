@@ -3,7 +3,7 @@ package pubsub
 import (
 	"errors"
 
-	"github.com/tendermint/tendermint/types"
+	"github.com/cometbft/cometbft/types"
 )
 
 // BlockIndexer implements a wrapper around the Pubsub sink and supports block
