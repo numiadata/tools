@@ -11,7 +11,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"github.com/gogo/protobuf/jsonpb"
 
-	"github.com/tendermint/tendermint/types"
+	"github.com/cometbft/cometbft/types"
 )
 
 const (
