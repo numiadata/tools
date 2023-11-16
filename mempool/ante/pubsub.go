@@ -45,6 +45,11 @@ type PubSubDecorator struct {
 	sync   bool // sync defines if we should wait for all pubsub results to complete prior to	returning
 }
 
+// NewPubSubDecorator returns a new PubSubDecorator. It accepts a logger, which
+// can be a no-op logger, a node ID, which can be the node moniker or some other
+// identifier, Google Cloud PubSub projectID and topic. It also accepts a sync
+// argument which determines if we should wait for all pubsub results to complete
+// prior to returning.
 func NewPubSubDecorator(logger log.Logger, nodeID, projectID, topic string, sync bool) PubSubDecorator {
 	if s := os.Getenv(credsEnvVar); len(s) == 0 {
 		panic(fmt.Errorf("missing '%s' environment variable", credsEnvVar))
