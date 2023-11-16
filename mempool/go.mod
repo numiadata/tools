@@ -6,6 +6,7 @@ toolchain go1.21.0
 
 require (
 	cloud.google.com/go/pubsub v1.33.0
+	cosmossdk.io/log v1.2.1
 	github.com/cosmos/cosmos-sdk v0.47.6
 )
 
@@ -59,6 +60,7 @@ require (
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/linxGnu/grocksdb v1.8.4 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
