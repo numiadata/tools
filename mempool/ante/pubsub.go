@@ -10,20 +10,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-)
-
-const (
-	credsEnvVar = "GOOGLE_APPLICATION_CREDENTIALS"
-
-	AttrKeyMsgType   = "message_type"
-	AttrKeyChainID   = "chain_id"
-	AttrKeyTxHash    = "tx_hash"
-	AttrKeyTimestamp = "timestamp"
-	AttrKeyNodeID    = "node_id"
-	AttrKeyMsgSigner = "msg_signer"
-	AttrKeyTxMsgType = "tx_msg_type"
-
-	MsgTypeCheckTxMsg = "check_tx_msg"
+	"github.com/numiadata/tools/mempool"
 )
 
 // PubSubDecorator defines an AnteHandler decorator that is responsible for emitting
@@ -51,8 +38,8 @@ type PubSubDecorator struct {
 // argument which determines if we should wait for all pubsub results to complete
 // prior to returning.
 func NewPubSubDecorator(logger log.Logger, nodeID, projectID, topic string, sync bool) PubSubDecorator {
-	if s := os.Getenv(credsEnvVar); len(s) == 0 {
-		panic(fmt.Errorf("missing '%s' environment variable", credsEnvVar))
+	if s := os.Getenv(mempool.CredsEnvVar); len(s) == 0 {
+		panic(fmt.Errorf("missing '%s' environment variable", mempool.CredsEnvVar))
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -106,13 +93,13 @@ func (d PubSubDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, n
 				&pubsub.Message{
 					Data: nil, // TODO(bez): Should we publish the entire tx or just the message?
 					Attributes: map[string]string{
-						AttrKeyMsgType:   MsgTypeCheckTxMsg,
-						AttrKeyChainID:   ctx.ChainID(),
-						AttrKeyTxHash:    txHashStr,
-						AttrKeyTimestamp: timestamp,
-						AttrKeyNodeID:    d.nodeID,
-						AttrKeyMsgSigner: msg.GetSigners()[0].String(),
-						AttrKeyTxMsgType: sdk.MsgTypeURL(msg),
+						mempool.AttrKeyMsgType:   mempool.MsgTypeCheckTxMsg,
+						mempool.AttrKeyChainID:   ctx.ChainID(),
+						mempool.AttrKeyTxHash:    txHashStr,
+						mempool.AttrKeyTimestamp: timestamp,
+						mempool.AttrKeyNodeID:    d.nodeID,
+						mempool.AttrKeyMsgSigner: msg.GetSigners()[0].String(),
+						mempool.AttrKeyTxMsgType: sdk.MsgTypeURL(msg),
 					},
 				},
 			)
