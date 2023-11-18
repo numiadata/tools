@@ -17,9 +17,9 @@ arguments for successful integration.
 
 ### Mempool
 
-We provide an SDK mempool, which internally extends a no-op mempool and overrides
-the `Insert` method, which emits a PubSub messages whenever `Insert` is called,
-i.e. upon a successful `CheckTx` call.
+We provide an SDK mempool, which internally extends a provided SDK mempool and
+overrides the `Insert` method, which emits a PubSub messages whenever `Insert` is
+called, i.e. upon a successful `CheckTx` call.
 
 ## PubSub Messages
 

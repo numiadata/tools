@@ -15,11 +15,11 @@ import (
 
 var _ sdkmempool.Mempool = (*PubSubMempool)(nil)
 
-// PubSubMempool defines an SDK mempool, which internally extends a no-op mempool
-// by overriding the Insert method which solely emits Google Cloud pubsub events
-// about transactions entering the mempool.
+// PubSubMempool defines an SDK mempool, which internally extends a provided mempool
+// by overriding the Insert method which emits Google Cloud pubsub events about
+// transactions entering the mempool prior to calling the inherited Insert logic.
 type PubSubMempool struct {
-	sdkmempool.NoOpMempool
+	sdkmempool.Mempool
 
 	logger    log.Logger
 	chainID   string
@@ -30,7 +30,13 @@ type PubSubMempool struct {
 	sync      bool // sync defines if we should wait for all pubsub results to complete prior to returning
 }
 
-func NewPubSubMempool(logger log.Logger, txEncoder sdk.TxEncoder, chainID, nodeID, projectID, topic string, sync bool) *PubSubMempool {
+func NewPubSubMempool(
+	logger log.Logger,
+	mp sdkmempool.Mempool,
+	txEncoder sdk.TxEncoder,
+	chainID, nodeID, projectID, topic string,
+	sync bool,
+) *PubSubMempool {
 	if s := os.Getenv(CredsEnvVar); len(s) == 0 {
 		panic(fmt.Errorf("missing '%s' environment variable", CredsEnvVar))
 	}
@@ -65,14 +71,14 @@ func NewPubSubMempool(logger log.Logger, txEncoder sdk.TxEncoder, chainID, nodeI
 	}
 
 	return &PubSubMempool{
-		NoOpMempool: sdkmempool.NoOpMempool{},
-		logger:      logger.With("module", "pubsub_mempool"),
-		chainID:     chainID,
-		nodeID:      nodeID,
-		txEncoder:   txEncoder,
-		client:      psClient,
-		topic:       psTopic,
-		sync:        sync,
+		Mempool:   mp,
+		logger:    logger.With("module", "pubsub_mempool"),
+		chainID:   chainID,
+		nodeID:    nodeID,
+		txEncoder: txEncoder,
+		client:    psClient,
+		topic:     psTopic,
+		sync:      sync,
 	}
 }
 
@@ -115,5 +121,5 @@ func (mp *PubSubMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 		}
 	}
 
-	return nil
+	return mp.Mempool.Insert(ctx, tx)
 }
