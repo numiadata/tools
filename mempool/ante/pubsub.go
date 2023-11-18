@@ -29,7 +29,7 @@ type PubSubDecorator struct {
 	nodeID string
 	client *pubsub.Client
 	topic  *pubsub.Topic
-	sync   bool // sync defines if we should wait for all pubsub results to complete prior to	returning
+	sync   bool // sync defines if we should wait for all pubsub results to complete prior to returning
 }
 
 // NewPubSubDecorator returns a new PubSubDecorator. It accepts a logger, which

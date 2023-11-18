@@ -27,7 +27,7 @@ type PubSubMempool struct {
 	txEncoder sdk.TxEncoder
 	client    *pubsub.Client
 	topic     *pubsub.Topic
-	sync      bool // sync defines if we should wait for all pubsub results to complete prior to	returning
+	sync      bool // sync defines if we should wait for all pubsub results to complete prior to returning
 }
 
 func NewPubSubMempool(logger log.Logger, txEncoder sdk.TxEncoder, chainID, nodeID, projectID, topic string, sync bool) *PubSubMempool {
