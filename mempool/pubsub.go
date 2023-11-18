@@ -11,5 +11,5 @@ const (
 	AttrKeyMsgSigner = "msg_signer"
 	AttrKeyTxMsgType = "tx_msg_type"
 
-	MsgTypeCheckTxMsg = "check_tx_msg"
+	MsgTypeCheckTxMsg = "mempool_tx_msg"
 )

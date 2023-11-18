@@ -17,4 +17,25 @@ arguments for successful integration.
 
 ### Mempool
 
-TODO...
+We provide an SDK mempool, which internally extends a no-op mempool and overrides
+the `Insert` method, which emits a PubSub messages whenever `Insert` is called,
+i.e. upon a successful `CheckTx` call.
+
+## PubSub Messages
+
+The following PubSub messages are emitted:
+
+```json
+{
+  "data": nil,
+  "attributes": {
+    "message_type": "mempool_tx_msg",
+    "chain_id": "<CHAIN-ID>",
+    "tx_hash": "<TX-HASH>",
+    "timestamp": "<TX-INSERT-TIMESTAMP>",
+    "node_id": "<NODE-ID/MONIKER>",
+    "msg_signer": "<TX-MSG-SIGNER>",
+    "tx_msg_type": "<TX-MSG-TYPE>",
+  }
+}
+```
