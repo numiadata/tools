@@ -20,13 +20,13 @@ To integrate into an application, simply add the decorator to the existing chain
 ```go
 import (
   // ...
-  mempoolante "github.com/numiadata/tools/mempool/ante
+  antepubsub "github.com/numiadata/tools/mempool/ante
 )
 
 func newAnteDecoratorChain(logger log.Logger, opts HandlerOptions) []sdk.AnteDecorator {
   return []sdk.AnteDecorator{
     // ...
-    mempoolante.NewPubSubDecorator(logger log.Logger, "<nodeID>", "<projectID>", "<topic>", false),
+    antepubsub.NewPubSubDecorator(logger log.Logger, "<nodeID>", "<projectID>", "<topic>", false),
   }
 }
 ```
@@ -39,6 +39,20 @@ func newAnteDecoratorChain(logger log.Logger, opts HandlerOptions) []sdk.AnteDec
 We provide an SDK mempool, which internally extends a provided SDK mempool and
 overrides the `Insert` method, which emits a PubSub messages whenever `Insert` is
 called, i.e. upon a successful `CheckTx` call.
+
+To integrate into an application, simply set the mempool on `BaseApp`:
+
+```go
+import (
+  // ...
+  mempoolpubsub "github.com/numiadata/tools/mempool
+)
+
+func New(...) *App {
+  // ...
+  app.SetMempool(mempoolpubsub.NewPubSubMempool(logger, "<nodeID>", "<projectID>", "<topic>", false))
+}
+```
 
 ## PubSub Messages
 
