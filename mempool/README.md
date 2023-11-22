@@ -15,6 +15,25 @@ We provide a Cosmos SDK AnteHandler decorator that a chain can simply inject int
 their existing AnteHandler chain. See `PubSubDecorator` for more details and required
 arguments for successful integration.
 
+To integrate into an application, simply add the decorator to the existing chain:
+
+```go
+import (
+  // ...
+  mempoolante "github.com/numiadata/tools/mempool/ante
+)
+
+func newAnteDecoratorChain(logger log.Logger, opts HandlerOptions) []sdk.AnteDecorator {
+  return []sdk.AnteDecorator{
+    // ...
+    mempoolante.NewPubSubDecorator(logger log.Logger, "<nodeID>", "<projectID>", "<topic>", false),
+  }
+}
+```
+
+> Note, it's best to add the decorator to the very end of the chain as to not emit
+> pubsub events for transactions that could fail CheckTx.
+
 ### Mempool
 
 We provide an SDK mempool, which internally extends a provided SDK mempool and
