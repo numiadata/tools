@@ -65,7 +65,7 @@ The following PubSub messages are emitted:
     "message_type": "mempool_tx_msg",
     "chain_id": "<CHAIN-ID>",
     "tx_hash": "<TX-HASH>",
-    "timestamp": "<TX-INSERT-TIMESTAMP>",
+    "timestamp": "<TX-INSERT-TIMESTAMP-NANO>",
     "node_id": "<NODE-ID/MONIKER>",
     "msg_signer": "<TX-MSG-SIGNER>",
     "tx_msg_type": "<TX-MSG-TYPE>",

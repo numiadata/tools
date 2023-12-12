@@ -84,7 +84,7 @@ func (d PubSubDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, n
 	if ctx.IsCheckTx() && !ctx.IsReCheckTx() {
 		txHashStr := fmt.Sprintf("%X", sha256.Sum256(ctx.TxBytes()))
 		msgs := tx.GetMsgs()
-		timestamp := time.Now().UTC().Format(time.RFC3339)
+		timestamp := time.Now().UTC().Format(time.StampNano)
 
 		results := make([]*pubsub.PublishResult, len(msgs))
 		for i, msg := range msgs {

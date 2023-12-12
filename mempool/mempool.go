@@ -91,7 +91,7 @@ func (mp *PubSubMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 
 	txHashStr := fmt.Sprintf("%X", sha256.Sum256(txBz))
 	msgs := tx.GetMsgs()
-	timestamp := time.Now().UTC().Format(time.RFC3339)
+	timestamp := time.Now().UTC().Format(time.StampNano)
 
 	results := make([]*pubsub.PublishResult, len(msgs))
 	for i, msg := range msgs {
