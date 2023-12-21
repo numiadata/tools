@@ -3,6 +3,7 @@ package mempool
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -95,10 +96,16 @@ func (mp *PubSubMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 
 	results := make([]*pubsub.PublishResult, len(msgs))
 	for i, msg := range msgs {
+		msgBz, err := json.Marshal(msg)
+		if err != nil {
+			mp.logger.Error("failed to JSON encode tx message", "err", err)
+			continue
+		}
+
 		results[i] = mp.topic.Publish(
 			context.Background(),
 			&pubsub.Message{
-				Data: []byte(msg.String()),
+				Data: msgBz,
 				Attributes: map[string]string{
 					AttrKeyMsgType:   MsgTypeCheckTxMsg,
 					AttrKeyChainID:   mp.chainID,
