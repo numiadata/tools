@@ -98,7 +98,7 @@ func (mp *PubSubMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 		results[i] = mp.topic.Publish(
 			context.Background(),
 			&pubsub.Message{
-				Data: nil, // TODO(bez): Should we publish the entire tx or just the message?
+				Data: []byte(msg.String()),
 				Attributes: map[string]string{
 					AttrKeyMsgType:   MsgTypeCheckTxMsg,
 					AttrKeyChainID:   mp.chainID,

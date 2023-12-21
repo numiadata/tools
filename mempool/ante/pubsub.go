@@ -91,7 +91,7 @@ func (d PubSubDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, n
 			results[i] = d.topic.Publish(
 				context.Background(),
 				&pubsub.Message{
-					Data: nil, // TODO(bez): Should we publish the entire tx or just the message?
+					Data: []byte(msg.String()),
 					Attributes: map[string]string{
 						mempool.AttrKeyMsgType:   mempool.MsgTypeCheckTxMsg,
 						mempool.AttrKeyChainID:   ctx.ChainID(),
