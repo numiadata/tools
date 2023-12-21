@@ -60,7 +60,7 @@ The following PubSub messages are emitted:
 
 ```json
 {
-  "data": nil,
+  "data": bytes(<MSG-STRING>),
   "attributes": {
     "message_type": "mempool_tx_msg",
     "chain_id": "<CHAIN-ID>",
