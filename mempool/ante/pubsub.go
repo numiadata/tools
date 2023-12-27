@@ -3,6 +3,7 @@ package ante
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -88,10 +89,16 @@ func (d PubSubDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, n
 
 		results := make([]*pubsub.PublishResult, len(msgs))
 		for i, msg := range msgs {
+			msgBz, err := json.Marshal(msg)
+			if err != nil {
+				d.logger.Error("failed to JSON encode tx message", "err", err)
+				continue
+			}
+
 			results[i] = d.topic.Publish(
 				context.Background(),
 				&pubsub.Message{
-					Data: nil, // TODO(bez): Should we publish the entire tx or just the message?
+					Data: msgBz,
 					Attributes: map[string]string{
 						mempool.AttrKeyMsgType:   mempool.MsgTypeCheckTxMsg,
 						mempool.AttrKeyChainID:   ctx.ChainID(),
