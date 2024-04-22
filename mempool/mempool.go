@@ -112,7 +112,6 @@ func (mp *PubSubMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 					AttrKeyTxHash:    txHashStr,
 					AttrKeyTimestamp: timestamp,
 					AttrKeyNodeID:    mp.nodeID,
-					AttrKeyMsgSigner: msg.GetSigners()[0].String(),
 					AttrKeyTxMsgType: sdk.MsgTypeURL(msg),
 				},
 			},
